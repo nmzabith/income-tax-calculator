@@ -11,8 +11,10 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { Typography } from "@mui/material";
-import { SocialIcon } from "react-social-icons";
 import {} from "bootstrap";
+import CustomTaxInput from "./components/customComponent";
+import Description from "./components/descriptions";
+import SocialMedia from "./components/socialIcons";
 
 export default function App() {
   const [income, setIncome] = React.useState({ monthly: 0, annualy: 0 });
@@ -180,45 +182,9 @@ export default function App() {
           </Typography>
         </Grid>
       </Grid>
-      <Grid item xs={12} mt={2}>
-        <Typography variant="body2" color={"red"} fontWeight={"bold"}>
-          Caution: This calculation done on a rough basis considering your
-          monthly income only. The real calculation may include multiple other
-          incomes such as allowances, bonuses etc. Refer IRD document
-          (ird.gov.lk)
-        </Typography>
-        <Typography
-          variant="body2"
-          color={"blue"}
-          fontWeight={"bold"}
-          marginTop={"8px"}
-          marginBottom={"8px"}
-        >
-          Info: If you can calculate your annual gross income (Salary +
-          allowances + bonuses + etc). you can put inside the the Annual Income
-          Input and it will calculate your monthly tax.
-        </Typography>
-        <Typography variant="body2">
-          Credits to the Orginal Creator (Old Tax Calculation)
-        </Typography>
-        <Typography variant="body2" fontWeight={"bold"}>
-          Any bugs. Let me know
-        </Typography>
-      </Grid>
-      <Grid item xs={12} mt={2}>
-        <SocialIcon
-          url="https://twitter.com/izabith"
-          style={{ margin: "5px" }}
-        />
-        <SocialIcon
-          url="https://www.facebook.com/nmzabith"
-          style={{ margin: "5px" }}
-        />
-        <SocialIcon
-          url="https://www.linkedin.com/in/zabithnm"
-          style={{ margin: "5px" }}
-        />
-      </Grid>
+      <Description></Description>
+      <SocialMedia></SocialMedia>
+      <CustomTaxInput/>
     </Box>
   );
 }
