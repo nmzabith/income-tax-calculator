@@ -12,7 +12,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { Typography } from "@mui/material";
 import {} from "bootstrap";
-import CustomTaxInput from "./components/customComponent";
+import CustomTaxInput from "./components/customTaxComponent";
 import Description from "./components/descriptions";
 import SocialMedia from "./components/socialIcons";
 
@@ -118,73 +118,92 @@ export default function App() {
   return (
     <Box sx={{ flexGrow: 1 }} p={5}>
       <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <Typography variant="h4" sx={{ textAlign: "center" }}>
-            Income Tax - 2022
-          </Typography>
-        </Grid>
-        <Grid item xs={6}>
-          <TextField
-            id="outlined-m"
-            label="Monthly Income"
-            variant="outlined"
-            value={income.monthly}
-            onChange={handleMonthlyAmountChange}
-            fullWidth
-            type="number"
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <TextField
-            id="outlined-a"
-            label="Annual Income"
-            variant="outlined"
-            value={income.annualy}
-            onChange={handleAnnualAmountChange}
-            fullWidth
-            type="number"
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 150 }} aria-label="simple table">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Slot</TableCell>
-                  <TableCell align="right">Rate(%)</TableCell>
-                  <TableCell align="right">Tax</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {tax.details.map((row) => (
-                  <TableRow
-                    key={`Rs.${row.from} - Rs.${row.to}`}
-                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                  >
-                    <TableCell component="th" scope="row">
-                      {`Rs.${row.from} - Rs.${row.to}`}
-                    </TableCell>
-                    <TableCell align="right">{row.rate}</TableCell>
-                    <TableCell align="right">{row.tax}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Grid>
-        <Grid item xs={12}>
-          <Typography variant="h5">
-            Income Tax Monthly: Rs.{Math.floor(tax.total).toLocaleString()}
-          </Typography>
-          <Typography variant="h5">
-            Income Tax Annualy: Rs.
-            {(Math.floor(tax.total) * 12).toLocaleString()}
-          </Typography>
-        </Grid>
+        {title("Income Tax - 2022")}
+        {monthlyIncome()}
+        {annualIncome()}
+        {income.monthly <= 100_000 ? "" : taxTable()}
+        {income.monthly <= 100_000 ? "" : incomeTaxOutput()}
       </Grid>
       <Description></Description>
-      <SocialMedia></SocialMedia>
       <CustomTaxInput/>
+      <SocialMedia></SocialMedia>
     </Box>
   );
+
+  function title(title) {
+    return <Grid item xs={12}>
+      <Typography variant="h4" sx={{ textAlign: "center" }}>
+        {title}
+      </Typography>
+    </Grid>;
+  }
+
+  function incomeTaxOutput() {
+    return <Grid item xs={12}>
+      <Typography variant="h5">
+        Income Tax Monthly: Rs.{Math.floor(tax.total).toLocaleString()}
+      </Typography>
+      <Typography variant="h5">
+        Income Tax Annualy: Rs.
+        {(Math.floor(tax.total) * 12).toLocaleString()}
+      </Typography>
+    </Grid>;
+  }
+
+  function annualIncome() {
+    return <Grid item xs={6}>
+      <TextField
+        id="outlined-a"
+        label="Annual Income"
+        variant="outlined"
+        value={income.annualy != 0 ? income.annualy : ""}
+        onChange={handleAnnualAmountChange}
+        fullWidth
+        type="number" />
+    </Grid>;
+  }
+
+  function monthlyIncome() {
+    return <Grid item xs={6}>
+      <TextField
+        id="outlined-m"
+        label="Monthly Income"
+        variant="outlined"
+        value={income.monthly != 0 ? income.monthly : ""}
+        onChange={handleMonthlyAmountChange}
+        fullWidth
+        type="number" />
+    </Grid>;
+  }
+
+  function taxTable() {
+    return (
+    <Grid item xs={12}>
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 150 }} aria-label="simple table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Slot</TableCell>
+              <TableCell align="right">Rate(%)</TableCell>
+              <TableCell align="right">Tax</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {tax.details.map((row) => (
+              <TableRow
+                key={`Rs.${row.from} - Rs.${row.to}`}
+                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+              >
+                <TableCell component="th" scope="row">
+                  {`Rs.${row.from} - Rs.${row.to}`}
+                </TableCell>
+                <TableCell align="right">{row.rate}</TableCell>
+                <TableCell align="right">{row.tax}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Grid>);
+  }
 }
