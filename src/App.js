@@ -125,10 +125,15 @@ export default function App() {
         {income.monthly <= 100_000 ? "" : incomeTaxOutput()}
       </Grid>
       <Description></Description>
-      <CustomTaxInput/>
+      <CustomTaxInput addtionaltax = {createAdditonTax}/>
       <SocialMedia></SocialMedia>
     </Box>
   );
+
+  function createAdditonTax(additionalTaxObject){
+    console.log("this is from APP");
+    console.log(additionalTaxObject);
+  }
 
   function title(title) {
     return <Grid item xs={12}>

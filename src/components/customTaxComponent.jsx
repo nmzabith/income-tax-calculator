@@ -26,8 +26,16 @@ class CustomTaxInput extends Component {
   constructor(props) {
     super(props);
   }
-  state = {};
+  state = {
+    customTax: {
+      isMonthly: true,
+      name: "",
+      amount: "",
+    },
+  };
   render() {
+    const { customTax } = this.state;
+
     return (
       <Grid
         container
@@ -37,16 +45,20 @@ class CustomTaxInput extends Component {
       >
         <Grid item xs={12}>
           <Typography variant="h5" sx={{ textAlign: "center" }}>
-            Advanced Tax Calculation
+            Additonal Tax Calculation
           </Typography>
         </Grid>
         <Grid item xs={6}>
-          <Tooltip title="Input the name of your additionl taxable income. Ex Annual Bonus">
+          <Tooltip
+            title="Input the name of your additionl taxable income. Ex Annual Bonus"
+            followCursor={true}
+          >
             <TextField
               id="outlined-m"
               label="Taxable Income Name"
               variant="outlined"
-              onChange={() => console.log("acc")}
+              value={customTax.name}
+              onChange={(events) => this.handleTaxName(events.target.value)}
               fullWidth
               type="text"
             />
@@ -57,7 +69,8 @@ class CustomTaxInput extends Component {
             id="outlined-m"
             label="Income Amount"
             variant="outlined"
-            onChange={() => console.log("acc")}
+            value={customTax.amount}
+            onChange={(events) => this.handleTaxAmount(events.target.value)}
             fullWidth
             type="number"
           />
@@ -67,7 +80,7 @@ class CustomTaxInput extends Component {
             aria-labelledby="tax-type"
             defaultValue="monthly"
             name="radio-buttons-group"
-            onChange={(events) => console.log(events.target.value)}
+            onChange={(events) => this.handletaxType(events.target.value)}
           >
             <FormControlLabel
               value="annual"
@@ -84,14 +97,45 @@ class CustomTaxInput extends Component {
         <Grid item xs={6} style={{ display: "flex", alignItems: "center" }}>
           <Button
             variant="contained"
-            disabled={true}
-            onClick={() => console.log("Buttion Cliclk ")}
+            disabled={
+              !(
+                this.isEmpty(customTax.amount) == false &&
+                this.isEmpty(customTax.name) == false
+              )
+            }
+            onClick={() => this.handleSubmit()}
           >
             Add
           </Button>
         </Grid>
       </Grid>
     );
+  }
+
+  isEmpty(value) {
+    return value == null || value.length === 0;
+  }
+
+  handleTaxName(name) {
+    let customTaxObject = this.state.customTax;
+    customTaxObject.name = name;
+    this.setState(customTaxObject);
+  }
+
+  handletaxType(type) {
+    let customTaxObject = this.state.customTax;
+    customTaxObject.isMonthly = type == "monthly";
+    this.setState(customTaxObject);
+  }
+
+  handleTaxAmount(amount) {
+    let customTaxObject = this.state.customTax;
+    customTaxObject.amount = amount;
+    this.setState(customTaxObject);
+  }
+
+  handleSubmit() {
+    this.props.addtionaltax(this.state.customTax);
   }
 }
 
