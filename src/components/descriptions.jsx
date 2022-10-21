@@ -12,9 +12,9 @@ class Description extends Component {
     return (
       <Grid item xs={12} mt={2}>
         <Typography variant="body2" color={"red"} fontWeight={"bold"}>
-          Caution: This calculation done on a rough basis considering your
-          monthly income only. The real calculation may include multiple other
-          incomes such as allowances, bonuses etc. Refer IRD document
+          Caution: This calculation done on a rough basis considering your given
+          incomes only. The real calculation may include multiple other incomes.
+          Refer IRD document
           <Chip
             label="IRD"
             size="small"
@@ -31,9 +31,9 @@ class Description extends Component {
           marginTop={"8px"}
           marginBottom={"8px"}
         >
-          Info: If you can calculate your annual gross income (Salary +
-          allowances + bonuses + etc). you can put inside the the Annual Income
-          Input and it will calculate your monthly tax.
+          Info: Use Additonl tax calculation to include your other incomes.
+          Select Monthly for incomes such as Allowances which recurring monthly.
+          Select Annually for incomes such as annual bonuses
         </Typography>
       </Grid>
     );

@@ -55,7 +55,7 @@ class CustomTaxInput extends Component {
           >
             <TextField
               id="outlined-m"
-              label="Taxable Income Name"
+              label="Taxable Income Title"
               variant="outlined"
               value={customTax.name}
               onChange={(events) => this.handleTaxName(events.target.value)}
@@ -83,9 +83,9 @@ class CustomTaxInput extends Component {
             onChange={(events) => this.handletaxType(events.target.value)}
           >
             <FormControlLabel
-              value="annual"
+              value="annually"
               control={<Radio />}
-              label="Annual"
+              label="Annually"
             />
             <FormControlLabel
               value="monthly"
@@ -135,7 +135,15 @@ class CustomTaxInput extends Component {
   }
 
   handleSubmit() {
-    this.props.addtionaltax(this.state.customTax);
+    let customTax = Object.assign({}, this.state.customTax);
+    this.props.addtionaltax(customTax);
+    this.setState({
+      customTax: {
+        isMonthly: true,
+        name: "",
+        amount: "",
+      },
+    });
   }
 }
 

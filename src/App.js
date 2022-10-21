@@ -1,5 +1,3 @@
-import * as React from "react";
-import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
@@ -15,25 +13,57 @@ import {} from "bootstrap";
 import CustomTaxInput from "./components/customTaxComponent";
 import Description from "./components/descriptions";
 import SocialMedia from "./components/socialIcons";
+import React, { Component } from 'react';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 
-export default function App() {
-  const [income, setIncome] = React.useState({ monthly: 0, annualy: 0 });
-  const [tax, setTax] = React.useState({ total: 0, details: [] });
+class App extends Component {
+  constructor(props) {
+    super(props);
+  }
+  state = {  
+    totalMonthlyIncome : 0,
+    income : {
+      monthly: 0, 
+      annualy: 0
+    },
+    tax: {
+      total: 0, 
+      details: []
+    },
+    customTax: []
+  }
 
-  const handleMonthlyAmountChange = (event) => {
+  handleMonthlyAmountChange = (event) => {
     const amount = Number(event.target.value);
-    setIncome({ monthly: amount, annualy: amount * 12 });
+    this.setState({income : { monthly: amount, annualy: amount * 12 }}, () => {
+      this.calculate();
+    })
   };
-  const handleAnnualAmountChange = (event) => {
+  handleAnnualAmountChange = (event) => {
     const amount = Number(event.target.value);
-    setIncome({ monthly: amount / 12, annualy: amount });
+    this.setState({income : { monthly: amount / 12, annualy: amount }}, () => {
+      this.calculate();
+    })
   };
 
-  React.useEffect(() => {
-    const amount = Number(income.monthly);
+  calculate =() => {
+    
+    const {income, customTax } = this.state;
+    let amount = Number(income.monthly);
+    if(customTax.length > 0){
+      let totalMonthly = Number(0);
 
+      customTax.forEach(tax => {
+        if(tax.isMonthly){
+          totalMonthly += Number(tax.amount);
+        }else{
+          totalMonthly += (Number(tax.amount)/12)
+        }
+      })
+      amount += totalMonthly;
+    }
     if (amount <= 100_000) {
-      setTax({ total: 0, details: [] });
+      this.setState({tax : { total: 0, details: [] }});
     } else {
       let taxAmount = { total: 0, details: [{ tax: 0, from: 0, to: 100_000 }] };
       let incomeAmount = amount - 100_000;
@@ -111,31 +141,45 @@ export default function App() {
           incomeAmount = 0;
         }
       }
-      setTax(taxAmount);
+      this.setState({tax: taxAmount, totalMonthlyIncome : amount})
     }
-  }, [income]);
+  };
 
-  return (
-    <Box sx={{ flexGrow: 1 }} p={5}>
-      <Grid container spacing={2}>
-        {title("Income Tax - 2022")}
-        {monthlyIncome()}
-        {annualIncome()}
-        {income.monthly <= 100_000 ? "" : taxTable()}
-        {income.monthly <= 100_000 ? "" : incomeTaxOutput()}
-      </Grid>
-      <Description></Description>
-      <CustomTaxInput addtionaltax = {createAdditonTax}/>
-      <SocialMedia></SocialMedia>
-    </Box>
-  );
-
-  function createAdditonTax(additionalTaxObject){
-    console.log("this is from APP");
-    console.log(additionalTaxObject);
+  handleDelete = (i) => {
+    const{customTax} = this.state
+    let afterFilter = customTax.filter((value, j) => j !== i)
+    this.setState({customTax : afterFilter}, () => {
+      this.calculate()
+    })
+  }
+  render(){
+    const {income, customTax, totalMonthlyIncome } = this.state;
+    return (
+      <Box sx={{ flexGrow: 1 }} p={5}>
+        <Grid container spacing={2}>
+          {this.title("Income Tax - 2022")}
+          {this.monthlyIncome()}
+          {this.annualIncome()}
+          {customTax.length > 0 ? this.customTaxTable() : ""}
+          {totalMonthlyIncome <= 100_000 ? "" : this.taxTable()}
+          {totalMonthlyIncome <= 100_000 ? "" : this.incomeTaxOutput()}
+        </Grid>
+        <Description></Description>
+        <CustomTaxInput addtionaltax = {this.createAdditonTax}/>
+        <SocialMedia></SocialMedia>
+      </Box>
+    );
   }
 
-  function title(title) {
+  createAdditonTax= (additionalTaxObject) => {
+    const{customTax} = this.state;
+    customTax.push(additionalTaxObject)
+    this.setState({customTax},() => {
+      this.calculate()
+    })
+  }
+
+  title(title) {
     return <Grid item xs={12}>
       <Typography variant="h4" sx={{ textAlign: "center" }}>
         {title}
@@ -143,7 +187,8 @@ export default function App() {
     </Grid>;
   }
 
-  function incomeTaxOutput() {
+  incomeTaxOutput() {
+    const {tax} = this.state;
     return <Grid item xs={12}>
       <Typography variant="h5">
         Income Tax Monthly: Rs.{Math.floor(tax.total).toLocaleString()}
@@ -155,33 +200,68 @@ export default function App() {
     </Grid>;
   }
 
-  function annualIncome() {
+  annualIncome() {
+    const {income } = this.state;
     return <Grid item xs={6}>
       <TextField
         id="outlined-a"
-        label="Annual Income"
+        label="Annual Salary"
         variant="outlined"
         value={income.annualy != 0 ? income.annualy : ""}
-        onChange={handleAnnualAmountChange}
+        onChange={this.handleAnnualAmountChange}
         fullWidth
         type="number" />
     </Grid>;
   }
 
-  function monthlyIncome() {
+  monthlyIncome() {
+    const {income } = this.state;
     return <Grid item xs={6}>
       <TextField
         id="outlined-m"
-        label="Monthly Income"
+        label="Monthly Salary"
         variant="outlined"
         value={income.monthly != 0 ? income.monthly : ""}
-        onChange={handleMonthlyAmountChange}
+        onChange={this.handleMonthlyAmountChange}
         fullWidth
         type="number" />
     </Grid>;
   }
 
-  function taxTable() {
+  customTaxTable(){
+    const {customTax} = this.state
+    return(
+      <Grid item xs={12}>
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 130 }} aria-label="simple table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Income Title</TableCell>
+              <TableCell align="right">Income Type</TableCell>
+              <TableCell align="right">Total</TableCell>
+              <TableCell align="right">Action</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {customTax.map((row,i) => (
+              <TableRow key={i+row.amount}>
+                <TableCell key={i} component="th" scope="row">
+                  {row.name}
+                </TableCell>
+                <TableCell align="right">{row.isMonthly ? "Montly" : "Annually"}</TableCell>
+                <TableCell align="right">{row.amount}</TableCell>
+                <TableCell align="right"><CloseOutlinedIcon onClick={()=> {this.handleDelete(i)}}></CloseOutlinedIcon></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Grid>
+    );
+  }
+
+  taxTable() {
+    const {tax} = this.state;
     return (
     <Grid item xs={12}>
       <TableContainer component={Paper}>
@@ -212,3 +292,6 @@ export default function App() {
     </Grid>);
   }
 }
+ 
+export default App;
+
