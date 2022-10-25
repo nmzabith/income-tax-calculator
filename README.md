@@ -1,2 +1,3 @@
 # income-tax-calculator
-Created with CodeSandbox
+
+Access the calculator using https://payetax.netlify.app/
