@@ -28,7 +28,7 @@ class CustomTaxInput extends Component {
   }
   state = {
     customTax: {
-      isMonthly: true,
+      percentage: "",
       name: "",
       amount: "",
     },
@@ -45,7 +45,7 @@ class CustomTaxInput extends Component {
       >
         <Grid item xs={12}>
           <Typography variant="h5" sx={{ textAlign: "center" }}>
-            Additonal Tax Calculation
+            Other Income
           </Typography>
         </Grid>
         <Grid item xs={6}>
@@ -76,23 +76,15 @@ class CustomTaxInput extends Component {
           />
         </Grid>
         <Grid item xs={6}>
-          <RadioGroup
-            aria-labelledby="tax-type"
-            defaultValue="monthly"
-            name="radio-buttons-group"
-            onChange={(events) => this.handletaxType(events.target.value)}
-          >
-            <FormControlLabel
-              value="annually"
-              control={<Radio />}
-              label="Annually"
-            />
-            <FormControlLabel
-              value="monthly"
-              control={<Radio />}
-              label="Monthly"
-            />
-          </RadioGroup>
+          <TextField
+            id="outlined-a"
+            label="Tax Percenatge"
+            variant="outlined"
+            value={customTax.percentage}
+            onChange={(events) => this.handlePercentage(events.target.value)}
+            fullWidth
+            type="number"
+          />
         </Grid>
         <Grid item xs={6} style={{ display: "flex", alignItems: "center" }}>
           <Button
@@ -100,7 +92,8 @@ class CustomTaxInput extends Component {
             disabled={
               !(
                 this.isEmpty(customTax.amount) == false &&
-                this.isEmpty(customTax.name) == false
+                this.isEmpty(customTax.name) == false &&
+                this.isEmpty(customTax.percentage) == false
               )
             }
             onClick={() => this.handleSubmit()}
@@ -122,9 +115,12 @@ class CustomTaxInput extends Component {
     this.setState(customTaxObject);
   }
 
-  handletaxType(type) {
+  handlePercentage(percentage) {
+    console.log(percentage, "percenatge");
+    if (percentage > 100) percentage = 100;
+    if (percentage < 0) percentage = 0;
     let customTaxObject = this.state.customTax;
-    customTaxObject.isMonthly = type == "monthly";
+    customTaxObject.percentage = percentage;
     this.setState(customTaxObject);
   }
 
@@ -139,7 +135,7 @@ class CustomTaxInput extends Component {
     this.props.addtionaltax(customTax);
     this.setState({
       customTax: {
-        isMonthly: true,
+        percentage: "",
         name: "",
         amount: "",
       },

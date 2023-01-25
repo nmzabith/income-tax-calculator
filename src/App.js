@@ -50,22 +50,21 @@ class App extends Component {
     
     const {income, customTax } = this.state;
     let amount = Number(income.monthly);
-    if(customTax.length > 0){
-      let totalMonthly = Number(0);
+    let totalMonthly = Number(0);
+    let totalOtherIncome = Number(0);
 
+    if(customTax.length > 0){
       customTax.forEach(tax => {
-        if(tax.isMonthly){
-          totalMonthly += Number(tax.amount);
-        }else{
-          totalMonthly += (Number(tax.amount)/12)
-        }
+        totalOtherIncome += Number(tax.amount)
+        totalMonthly += (tax.amount * (tax.percentage/100))
       })
-      amount += totalMonthly;
     }
+
+    
     if (amount <= 100_000) {
-      this.setState({tax : { total: 0, details: [] }});
+      this.setState({tax : { total: 0, details: [] }, otherTax: totalMonthly, otherIncome: totalOtherIncome});
     } else {
-      let taxAmount = { total: 0, details: [{ tax: 0, from: 0, to: 100_000 }] };
+      let taxAmount = { total: 0, details: [{ tax: 0, from: 0, to: 100_000 }]};
       let incomeAmount = amount - 100_000;
       let rate = 6;
       let slot = 41666.6666667;
@@ -141,7 +140,7 @@ class App extends Component {
           incomeAmount = 0;
         }
       }
-      this.setState({tax: taxAmount, totalMonthlyIncome : amount})
+      this.setState({tax: taxAmount, totalMonthlyIncome : amount, otherTax: totalMonthly, otherIncome: totalOtherIncome})
     }
   };
 
@@ -153,7 +152,8 @@ class App extends Component {
     })
   }
   render(){
-    const {income, customTax, totalMonthlyIncome } = this.state;
+    const {income, customTax, totalMonthlyIncome, otherTax, tax } = this.state;
+
     return (
       <Box sx={{ flexGrow: 1 }} p={5}>
         <Grid container spacing={2}>
@@ -162,7 +162,7 @@ class App extends Component {
           {this.annualIncome()}
           {customTax.length > 0 ? this.customTaxTable() : ""}
           {totalMonthlyIncome <= 100_000 ? "" : this.taxTable()}
-          {totalMonthlyIncome <= 100_000 ? "" : this.incomeTaxOutput()}
+          {!(Math.floor(tax.total+otherTax) > 0)? "" : this.incomeTaxOutput()}
         </Grid>
         <Description></Description>
         <CustomTaxInput addtionaltax = {this.createAdditonTax}/>
@@ -188,14 +188,18 @@ class App extends Component {
   }
 
   incomeTaxOutput() {
-    const {tax} = this.state;
+    const {tax, otherTax, totalMonthlyIncome, otherIncome} = this.state;
     return <Grid item xs={12}>
       <Typography variant="h5">
-        Income Tax Monthly: Rs.{Math.floor(tax.total).toLocaleString()}
+        Income Tax: Rs.{Math.floor(tax.total+otherTax).toLocaleString()}
       </Typography>
       <Typography variant="h5">
-        Income Tax Annualy: Rs.
-        {(Math.floor(tax.total) * 12).toLocaleString()}
+        Total Income: Rs.
+        {(Number(totalMonthlyIncome) + Number(otherIncome)).toLocaleString()}
+      </Typography>
+      <Typography variant="h5">
+        Income After Tax: Rs.
+        {(Number(totalMonthlyIncome) + Number(otherIncome) - Number(Math.floor(tax.total+otherTax))).toLocaleString()}
       </Typography>
     </Grid>;
   }
@@ -237,8 +241,9 @@ class App extends Component {
           <TableHead>
             <TableRow>
               <TableCell>Income Title</TableCell>
-              <TableCell align="right">Income Type</TableCell>
+              <TableCell align="right">Percentage</TableCell>
               <TableCell align="right">Total</TableCell>
+              <TableCell align="right">Tax</TableCell>
               <TableCell align="right">Action</TableCell>
             </TableRow>
           </TableHead>
@@ -248,8 +253,9 @@ class App extends Component {
                 <TableCell key={i} component="th" scope="row">
                   {row.name}
                 </TableCell>
-                <TableCell align="right">{row.isMonthly ? "Montly" : "Annually"}</TableCell>
-                <TableCell align="right">{row.amount}</TableCell>
+                <TableCell align="right">{row.percentage}%</TableCell>
+                <TableCell align="right">Rs.{(row.amount).toLocaleString()}</TableCell>
+                <TableCell align="right">Rs.{(row.amount*(row.percentage/100)).toLocaleString()}</TableCell>
                 <TableCell align="right"><CloseOutlinedIcon onClick={()=> {this.handleDelete(i)}}></CloseOutlinedIcon></TableCell>
               </TableRow>
             ))}

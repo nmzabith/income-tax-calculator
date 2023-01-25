@@ -31,9 +31,11 @@ class Description extends Component {
           marginTop={"8px"}
           marginBottom={"8px"}
         >
-          Info: Use Additonl tax calculation to include your other incomes.
-          Select Monthly for incomes such as Allowances which recurring monthly.
-          Select Annually for incomes such as annual bonuses
+          Info: If you recive annual bonues tax will be calculated on that month
+          when you receive bonus. Ex Salary(Rs. 200,000) + Bonus (Rs. 300, 000)
+          Your tax will be calculated for the sum which is Rs. 500,000 (Tax
+          Rs.106,499). Use Other Income to calculate tax applied with diffrent
+          rates such as Tax on Rent, Tax on Intrest Income
         </Typography>
       </Grid>
     );
