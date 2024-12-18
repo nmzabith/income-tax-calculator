@@ -87,64 +87,61 @@ class App extends Component {
     let incomeAmount = amount - threshold;
     let rate = 6;
     let slot = 41666.6666667;
-    let totalTax = 0;  // Track total separately to avoid cumulative rounding errors
+    let taxableAmount = 0;
+    let details = [...taxAmount.details];
+    let currentPosition = threshold;
 
     while (incomeAmount > 0) {
       if (incomeAmount > slot) {
-        const slotTax = Math.round((slot * rate) / 100);
-        totalTax += slotTax;  // Add to running total
-        taxAmount = {
-          total: totalTax,  // Use running total
-          details: [
-            ...taxAmount.details,
-            {
-              tax: slotTax,
-              from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
-              to: Math.round(taxAmount.details[taxAmount.details.length - 1].to + slot),
-              rate
-            }
-          ]
-        };
+        // Calculate exact tax without rounding
+        const exactTax = (slot * rate) / 100;
+        taxableAmount += exactTax;
+        
+        details.push({
+          tax: Math.round(exactTax),
+          from: Math.round(currentPosition),
+          to: Math.round(currentPosition + slot),
+          rate
+        });
+        
+        currentPosition += slot;
         incomeAmount -= slot;
+        
         if (rate < 36) {
           rate += 6;
         }
-        if (rate === 36) {
-          const finalTax = Math.round(((amount - taxAmount.details[taxAmount.details.length - 1].to) * rate) / 100);
-          totalTax += finalTax;  // Add final tax to running total
-          taxAmount = {
-            total: totalTax,  // Use final total
-            details: [
-              ...taxAmount.details,
-              {
-                tax: finalTax,
-                from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
-                to: Math.round(amount),
-                rate
-              }
-            ]
-          };
+        
+        if (rate === 36 && incomeAmount > 0) {
+          const finalExactTax = (incomeAmount * rate) / 100;
+          taxableAmount += finalExactTax;
+          
+          details.push({
+            tax: Math.round(finalExactTax),
+            from: Math.round(currentPosition),
+            to: Math.round(amount),
+            rate
+          });
           break;
         }
       } else {
-        const slotTax = Math.round((incomeAmount * rate) / 100);
-        totalTax += slotTax;  // Add to running total
-        taxAmount = {
-          total: totalTax,  // Use running total
-          details: [
-            ...taxAmount.details,
-            {
-              tax: slotTax,
-              from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
-              to: Math.round(taxAmount.details[taxAmount.details.length - 1].to + incomeAmount),
-              rate
-            }
-          ]
-        };
+        const exactTax = (incomeAmount * rate) / 100;
+        taxableAmount += exactTax;
+        
+        details.push({
+          tax: Math.round(exactTax),
+          from: Math.round(currentPosition),
+          to: Math.round(currentPosition + incomeAmount),
+          rate
+        });
         incomeAmount = 0;
       }
     }
-    return taxAmount;
+
+    // Round the total only at the end
+    return {
+      total: Math.round(taxableAmount),
+      details
+    };
   };
 
   calculateNewTax = (amount, threshold) => {
@@ -157,101 +154,88 @@ class App extends Component {
     let rate = 6;
     let slot = 41666.6666667;
     let sixPercentSlot = 83333.33333334;
-    let totalTax = 0;  // Track total separately to avoid cumulative rounding errors
+    let taxableAmount = 0;
+    let details = [...taxAmount.details];
+    let currentPosition = threshold;
 
-    // Handle first 6% bracket differently for new calculation
+    // Handle first 6% bracket
     if (incomeAmount > sixPercentSlot) {
-      const slotTax = Math.round((sixPercentSlot * rate) / 100);
-      totalTax += slotTax;
-      taxAmount = {
-        total: totalTax,
-        details: [
-          ...taxAmount.details,
-          {
-            tax: slotTax,
-            from: threshold,
-            to: threshold + sixPercentSlot,
-            rate
-          }
-        ]
-      };
+      const exactTax = (sixPercentSlot * rate) / 100;
+      taxableAmount += exactTax;
+      
+      details.push({
+        tax: Math.round(exactTax),
+        from: Math.round(currentPosition),
+        to: Math.round(currentPosition + sixPercentSlot),
+        rate
+      });
+      
+      currentPosition += sixPercentSlot;
       incomeAmount -= sixPercentSlot;
-      rate = 18;  // Jump directly to 18% after 6%
+      rate = 18; // Jump to 18%
     } else {
-      const slotTax = Math.round((incomeAmount * rate) / 100);
-      totalTax += slotTax;
-      taxAmount = {
-        total: totalTax,
-        details: [
-          ...taxAmount.details,
-          {
-            tax: slotTax,
-            from: threshold,
-            to: threshold + incomeAmount,
-            rate
-          }
-        ]
-      };
+      const exactTax = (incomeAmount * rate) / 100;
+      taxableAmount += exactTax;
+      
+      details.push({
+        tax: Math.round(exactTax),
+        from: Math.round(currentPosition),
+        to: Math.round(currentPosition + incomeAmount),
+        rate
+      });
       incomeAmount = 0;
     }
 
-    // Continue with remaining brackets using standard slot size
+    // Handle remaining brackets
     while (incomeAmount > 0) {
       if (incomeAmount > slot) {
-        const slotTax = Math.round((slot * rate) / 100);
-        totalTax += slotTax;
-        taxAmount = {
-          total: totalTax,
-          details: [
-            ...taxAmount.details,
-            {
-              tax: slotTax,
-              from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
-              to: Math.round(taxAmount.details[taxAmount.details.length - 1].to + slot),
-              rate
-            }
-          ]
-        };
+        const exactTax = (slot * rate) / 100;
+        taxableAmount += exactTax;
+        
+        details.push({
+          tax: Math.round(exactTax),
+          from: Math.round(currentPosition),
+          to: Math.round(currentPosition + slot),
+          rate
+        });
+        
+        currentPosition += slot;
         incomeAmount -= slot;
+        
         if (rate < 36) {
-          rate += 6;  // Continue with 6% increments from 18% (18->24->30->36)
+          rate += 6;
         }
-        if (rate === 36) {
-          const finalTax = Math.round(((amount - taxAmount.details[taxAmount.details.length - 1].to) * rate) / 100);
-          totalTax += finalTax;
-          taxAmount = {
-            total: totalTax,
-            details: [
-              ...taxAmount.details,
-              {
-                tax: finalTax,
-                from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
-                to: Math.round(amount),
-                rate
-              }
-            ]
-          };
+        
+        if (rate === 36 && incomeAmount > 0) {
+          const finalExactTax = (incomeAmount * rate) / 100;
+          taxableAmount += finalExactTax;
+          
+          details.push({
+            tax: Math.round(finalExactTax),
+            from: Math.round(currentPosition),
+            to: Math.round(amount),
+            rate
+          });
           break;
         }
       } else {
-        const slotTax = Math.round((incomeAmount * rate) / 100);
-        totalTax += slotTax;
-        taxAmount = {
-          total: totalTax,
-          details: [
-            ...taxAmount.details,
-            {
-              tax: slotTax,
-              from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
-              to: Math.round(taxAmount.details[taxAmount.details.length - 1].to + incomeAmount),
-              rate
-            }
-          ]
-        };
+        const exactTax = (incomeAmount * rate) / 100;
+        taxableAmount += exactTax;
+        
+        details.push({
+          tax: Math.round(exactTax),
+          from: Math.round(currentPosition),
+          to: Math.round(currentPosition + incomeAmount),
+          rate
+        });
         incomeAmount = 0;
       }
     }
-    return taxAmount;
+
+    return {
+      total: Math.round(taxableAmount),
+      details
+    };
   };
 
   handleDelete = (i) => {
@@ -415,16 +399,39 @@ class App extends Component {
     const {tax, oldTax, totalMonthlyIncome} = this.state;
     if (totalMonthlyIncome <= 0) return null;
     
-    // Get the longer of the two detail arrays
-    const detailsToShow = oldTax.details.length > tax.details.length ? 
-      oldTax.details.map((oldRow, index) => ({
-        oldRow,
-        newRow: tax.details[index] || null
-      })) :
-      tax.details.map((newRow, index) => ({
-        oldRow: oldTax.details[index] || null,
-        newRow
-      }));
+    // Add rate property to first bracket (0%)
+    const oldDetailsWithRate = oldTax.details.map((detail, index) => 
+      index === 0 ? { ...detail, rate: 0 } : detail
+    );
+    const newDetailsWithRate = tax.details.map((detail, index) => 
+      index === 0 ? { ...detail, rate: 0 } : detail
+    );
+
+    // Create a modified version of old tax details to show 12% removal explicitly
+    const modifiedOldDetails = oldDetailsWithRate.reduce((acc, row) => {
+      if (row.rate === 12) {
+        // Split 12% bracket into its own row (to be shown as removed)
+        acc.push({
+          oldRow: {
+            ...row,
+            to: row.to,
+            tax: row.tax
+          },
+          newRow: null  // No corresponding new row for 12%
+        });
+      } else {
+        // For other rates, match with new tax details
+        const matchingNewRow = newDetailsWithRate.find(newRow => 
+          (newRow.rate === row.rate) || 
+          (row.rate < 18 && newRow.rate === 18) // Handle 6% to 18% transition
+        );
+        acc.push({
+          oldRow: row,
+          newRow: matchingNewRow
+        });
+      }
+      return acc;
+    }, []);
     
     return (
     <Grid item xs={12}>
@@ -439,32 +446,49 @@ class App extends Component {
             </TableRow>
           </TableHead>
           <TableBody>
-            {detailsToShow.map((detail, index) => {
+            {modifiedOldDetails.map((detail, index) => {
               const { oldRow, newRow } = detail;
+              const isZeroRate = oldRow.rate === 0;
               return (
                 <TableRow
                   key={`tax-row-${index}`}
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  sx={{ 
+                    "&:last-child td, &:last-child th": { border: 0 },
+                    backgroundColor: oldRow.rate === 12 ? '#ffebee' : 'inherit'
+                  }}
                 >
                   <TableCell component="th" scope="row">
                     {oldRow && (!newRow || oldRow.from !== newRow.from) && (
-                      <Typography component="span" sx={{ color: 'red', textDecoration: 'line-through', display: 'block' }}>
+                      <Typography component="span" sx={{ 
+                        color: isZeroRate ? 'inherit' : 'red', 
+                        textDecoration: oldRow.rate === 12 ? 'none' : (isZeroRate ? 'none' : 'line-through'),
+                        display: 'block' 
+                      }}>
                         {`Rs.${Math.round(oldRow.from).toLocaleString()} - Rs.${Math.round(oldRow.to).toLocaleString()}`}
+                        {oldRow.rate === 12 && " (Removed)"}
                       </Typography>
                     )}
                     {newRow && `Rs.${Math.round(newRow.from).toLocaleString()} - Rs.${Math.round(newRow.to).toLocaleString()}`}
                   </TableCell>
                   <TableCell align="right">
                     {oldRow && (!newRow || oldRow.rate !== newRow.rate) && (
-                      <Typography component="span" sx={{ color: 'red', textDecoration: 'line-through', display: 'block' }}>
-                        {oldRow.rate}
+                      <Typography component="span" sx={{ 
+                        color: isZeroRate ? 'inherit' : 'red',
+                        textDecoration: oldRow.rate === 12 ? 'none' : (isZeroRate ? 'none' : 'line-through'),
+                        display: 'block'
+                      }}>
+                        {oldRow.rate}{oldRow.rate === 12 ? '% (Removed)' : '%'}
                       </Typography>
                     )}
-                    {newRow && newRow.rate}
+                    {newRow && `${newRow.rate}%`}
                   </TableCell>
                   <TableCell align="right">
                     {oldRow && (!newRow || oldRow.tax !== newRow.tax) && (
-                      <Typography component="span" sx={{ color: 'red', textDecoration: 'line-through', display: 'block' }}>
+                      <Typography component="span" sx={{ 
+                        color: isZeroRate ? 'inherit' : 'red',
+                        textDecoration: oldRow.rate === 12 ? 'none' : (isZeroRate ? 'none' : 'line-through'),
+                        display: 'block'
+                      }}>
                         {Math.round(oldRow.tax).toLocaleString()}
                       </Typography>
                     )}
