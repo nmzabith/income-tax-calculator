@@ -12,7 +12,7 @@ class Description extends Component {
     return (
       <Grid item xs={12} mt={2}>
         <Typography variant="body2" color={"red"} fontWeight={"bold"}>
-          Caution: This calculation done on a rough basis considering your given
+          Caution: This calculation uses information as of 18/12/2024 5 PM. This is done on a rough basis considering your given
           incomes only. The real calculation may include multiple other incomes.
           Refer IRD document
           <Chip
