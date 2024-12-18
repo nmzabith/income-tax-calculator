@@ -13,7 +13,7 @@ class Description extends Component {
       <Grid item xs={12} mt={2}>
         <Typography variant="body2" color={"red"} fontWeight={"bold"}>
           Important: The new tax amendments are pending parliamentary approval and the effective date is yet to be announced. 
-          This calculation uses proposed changes as of 18/12/2024 5 PM. Real implementation may vary based on final legislation.
+          This calculation uses proposed changes as of 18/12/2024 10 PM. Real implementation may vary based on final legislation.
           This is done on a rough basis considering your given incomes only. The real calculation may include multiple other incomes.
           Refer IRD document
           <Chip
@@ -32,12 +32,12 @@ class Description extends Component {
           marginTop={"8px"}
           marginBottom={"8px"}
         >
-          Info: Tax free threshold increased to Rs.150,000 (previously Rs.100,000). First 6% tax slab increased to Rs.1 Million
-          (previously Rs.500k) and remaining slabs remain at Rs.500k. If you receive annual bonuses tax will be calculated on that month
-          when you receive bonus. Ex Salary(Rs. 200,000) + Bonus (Rs. 300,000)
-          Your tax will be calculated for the sum which is Rs. 500,000 (Tax
-          Rs.106,499). Use Other Income to calculate tax applied with different
-          rates such as Tax on Rent, Tax on Interest Income
+          Info: Updated tax structure as of 10 PM 19/12/2024 - Tax free threshold increased to Rs.150,000 (previously Rs.100,000). 
+          First 6% tax slab increased to Rs.1 Million (previously Rs.500k). The 12% tax bracket has been removed, 
+          and. Subsequent tax rates continue at 6% increments 
+          (18% -> 24% -> 30% -> 36%). If you receive annual bonuses, tax will be calculated on that month
+          when you receive bonus. Use Other Income to calculate tax applied with different
+          rates such as Tax on Rent, Tax on Interest Income.
         </Typography>
       </Grid>
     );

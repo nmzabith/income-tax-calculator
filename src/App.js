@@ -87,16 +87,18 @@ class App extends Component {
     let incomeAmount = amount - threshold;
     let rate = 6;
     let slot = 41666.6666667;
+    let totalTax = 0;  // Track total separately to avoid cumulative rounding errors
 
     while (incomeAmount > 0) {
       if (incomeAmount > slot) {
-        const slotTax = (slot * rate) / 100;
+        const slotTax = Math.round((slot * rate) / 100);
+        totalTax += slotTax;  // Add to running total
         taxAmount = {
-          total: taxAmount.total + slotTax,
+          total: totalTax,  // Use running total
           details: [
             ...taxAmount.details,
             {
-              tax: Math.round(slotTax),
+              tax: slotTax,
               from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
               to: Math.round(taxAmount.details[taxAmount.details.length - 1].to + slot),
               rate
@@ -108,14 +110,16 @@ class App extends Component {
           rate += 6;
         }
         if (rate === 36) {
+          const finalTax = Math.round(((amount - taxAmount.details[taxAmount.details.length - 1].to) * rate) / 100);
+          totalTax += finalTax;  // Add final tax to running total
           taxAmount = {
-            total: taxAmount.total + ((amount - taxAmount.details[taxAmount.details.length - 1].to) * rate) / 100,
+            total: totalTax,  // Use final total
             details: [
               ...taxAmount.details,
               {
-                tax: Math.round(((amount - taxAmount.details[taxAmount.details.length - 1].to) * rate) / 100),
+                tax: finalTax,
                 from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
-                to: amount,
+                to: Math.round(amount),
                 rate
               }
             ]
@@ -124,14 +128,15 @@ class App extends Component {
         }
       } else {
         const slotTax = Math.round((incomeAmount * rate) / 100);
+        totalTax += slotTax;  // Add to running total
         taxAmount = {
-          total: taxAmount.total + slotTax,
+          total: totalTax,  // Use running total
           details: [
             ...taxAmount.details,
             {
-              tax: Math.round(slotTax),
-              from: Math.floor(taxAmount.details[taxAmount.details.length - 1].to),
-              to: Math.floor(taxAmount.details[taxAmount.details.length - 1].to + incomeAmount),
+              tax: slotTax,
+              from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
+              to: Math.round(taxAmount.details[taxAmount.details.length - 1].to + incomeAmount),
               rate
             }
           ]
@@ -152,16 +157,18 @@ class App extends Component {
     let rate = 6;
     let slot = 41666.6666667;
     let sixPercentSlot = 83333.33333334;
+    let totalTax = 0;  // Track total separately to avoid cumulative rounding errors
 
     // Handle first 6% bracket differently for new calculation
     if (incomeAmount > sixPercentSlot) {
-      const slotTax = (sixPercentSlot * rate) / 100;
+      const slotTax = Math.round((sixPercentSlot * rate) / 100);
+      totalTax += slotTax;
       taxAmount = {
-        total: taxAmount.total + slotTax,
+        total: totalTax,
         details: [
           ...taxAmount.details,
           {
-            tax: Math.round(slotTax),
+            tax: slotTax,
             from: threshold,
             to: threshold + sixPercentSlot,
             rate
@@ -169,15 +176,16 @@ class App extends Component {
         ]
       };
       incomeAmount -= sixPercentSlot;
-      rate += 6;
+      rate = 18;  // Jump directly to 18% after 6%
     } else {
-      const slotTax = (incomeAmount * rate) / 100;
+      const slotTax = Math.round((incomeAmount * rate) / 100);
+      totalTax += slotTax;
       taxAmount = {
-        total: taxAmount.total + slotTax,
+        total: totalTax,
         details: [
           ...taxAmount.details,
           {
-            tax: Math.round(slotTax),
+            tax: slotTax,
             from: threshold,
             to: threshold + incomeAmount,
             rate
@@ -190,47 +198,35 @@ class App extends Component {
     // Continue with remaining brackets using standard slot size
     while (incomeAmount > 0) {
       if (incomeAmount > slot) {
-        const slotTax = (slot * rate) / 100;
+        const slotTax = Math.round((slot * rate) / 100);
+        totalTax += slotTax;
         taxAmount = {
-          total: taxAmount.total + slotTax,
+          total: totalTax,
           details: [
             ...taxAmount.details,
             {
-              tax: Math.round(slotTax),
-              from: Math.round(
-                taxAmount.details[taxAmount.details.length - 1].to
-              ),
-              to: Math.round(
-                taxAmount.details[taxAmount.details.length - 1].to + slot
-              ),
+              tax: slotTax,
+              from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
+              to: Math.round(taxAmount.details[taxAmount.details.length - 1].to + slot),
               rate
             }
           ]
         };
         incomeAmount -= slot;
         if (rate < 36) {
-          rate += 6;
+          rate += 6;  // Continue with 6% increments from 18% (18->24->30->36)
         }
         if (rate === 36) {
+          const finalTax = Math.round(((amount - taxAmount.details[taxAmount.details.length - 1].to) * rate) / 100);
+          totalTax += finalTax;
           taxAmount = {
-            total:
-              taxAmount.total +
-              ((amount - taxAmount.details[taxAmount.details.length - 1].to) *
-                rate) /
-                100,
+            total: totalTax,
             details: [
               ...taxAmount.details,
               {
-                tax: Math.round(
-                  ((amount -
-                    taxAmount.details[taxAmount.details.length - 1].to) *
-                    rate) /
-                    100
-                ),
-                from: Math.round(
-                  taxAmount.details[taxAmount.details.length - 1].to
-                ),
-                to: amount,
+                tax: finalTax,
+                from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
+                to: Math.round(amount),
                 rate
               }
             ]
@@ -239,19 +235,15 @@ class App extends Component {
         }
       } else {
         const slotTax = Math.round((incomeAmount * rate) / 100);
+        totalTax += slotTax;
         taxAmount = {
-          total: taxAmount.total + slotTax,
+          total: totalTax,
           details: [
             ...taxAmount.details,
             {
-              tax: Math.round(slotTax),
-              from: Math.floor(
-                taxAmount.details[taxAmount.details.length - 1].to
-              ),
-              to: Math.floor(
-                taxAmount.details[taxAmount.details.length - 1].to +
-                  incomeAmount
-              ),
+              tax: slotTax,
+              from: Math.round(taxAmount.details[taxAmount.details.length - 1].to),
+              to: Math.round(taxAmount.details[taxAmount.details.length - 1].to + incomeAmount),
               rate
             }
           ]
