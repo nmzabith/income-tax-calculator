@@ -30,7 +30,11 @@ class App extends Component {
       total: 0, 
       details: []
     },
-    customTax: []
+    customTax: [],
+    oldTax: {
+      total: 0,
+      details: []
+    }
   }
 
   handleMonthlyAmountChange = (event) => {
@@ -46,9 +50,8 @@ class App extends Component {
     })
   };
 
-  calculate =() => {
-    
-    const {income, customTax } = this.state;
+  calculate = () => {
+    const {income, customTax} = this.state;
     let amount = Number(income.monthly);
     let totalMonthly = Number(0);
     let totalOtherIncome = Number(0);
@@ -60,88 +63,103 @@ class App extends Component {
       })
     }
 
+    // Calculate old tax (100,000 threshold)
+    let oldTaxAmount = this.calculateTaxForThreshold(amount, 100000);
     
-    if (amount <= 100_000) {
-      this.setState({tax : { total: 0, details: [] }, otherTax: totalMonthly, otherIncome: totalOtherIncome});
-    } else {
-      let taxAmount = { total: 0, details: [{ tax: 0, from: 0, to: 100_000 }]};
-      let incomeAmount = amount - 100_000;
-      let rate = 6;
-      let slot = 41666.6666667;
+    // Calculate new tax (150,000 threshold)
+    let newTaxAmount = this.calculateTaxForThreshold(amount, 150000);
 
-      while (incomeAmount > 0) {
-        if (incomeAmount > slot) {
-          const slotTax = (slot * rate) / 100;
+    this.setState({
+      tax: newTaxAmount,
+      oldTax: oldTaxAmount,
+      totalMonthlyIncome: amount,
+      otherTax: totalMonthly,
+      otherIncome: totalOtherIncome
+    });
+  };
+
+  calculateTaxForThreshold = (amount, threshold) => {
+    if (amount <= threshold) {
+      return { total: 0, details: [] };
+    }
+
+    let taxAmount = { total: 0, details: [{ tax: 0, from: 0, to: threshold }]};
+    let incomeAmount = amount - threshold;
+    let rate = 6;
+    let slot = 41666.6666667;
+
+    while (incomeAmount > 0) {
+      if (incomeAmount > slot) {
+        const slotTax = (slot * rate) / 100;
+        taxAmount = {
+          total: taxAmount.total + slotTax,
+          details: [
+            ...taxAmount.details,
+            {
+              tax: Math.round(slotTax),
+              from: Math.round(
+                taxAmount.details[taxAmount.details.length - 1].to
+              ),
+              to: Math.round(
+                taxAmount.details[taxAmount.details.length - 1].to + slot
+              ),
+              rate
+            }
+          ]
+        };
+        incomeAmount -= slot;
+        if (rate < 36) {
+          rate += 6;
+        }
+        if (rate === 36) {
           taxAmount = {
-            total: taxAmount.total + slotTax,
+            total:
+              taxAmount.total +
+              ((amount - taxAmount.details[taxAmount.details.length - 1].to) *
+                rate) /
+                100,
             details: [
               ...taxAmount.details,
               {
-                tax: Math.round(slotTax),
+                tax: Math.round(
+                  ((amount -
+                    taxAmount.details[taxAmount.details.length - 1].to) *
+                    rate) /
+                    100
+                ),
                 from: Math.round(
                   taxAmount.details[taxAmount.details.length - 1].to
                 ),
-                to: Math.round(
-                  taxAmount.details[taxAmount.details.length - 1].to + slot
-                ),
+                to: amount,
                 rate
               }
             ]
           };
-          incomeAmount -= slot;
-          if (rate < 36) {
-            rate += 6;
-          }
-          if (rate === 36) {
-            taxAmount = {
-              total:
-                taxAmount.total +
-                ((amount - taxAmount.details[taxAmount.details.length - 1].to) *
-                  rate) /
-                  100,
-              details: [
-                ...taxAmount.details,
-                {
-                  tax: Math.round(
-                    ((amount -
-                      taxAmount.details[taxAmount.details.length - 1].to) *
-                      rate) /
-                      100
-                  ),
-                  from: Math.round(
-                    taxAmount.details[taxAmount.details.length - 1].to
-                  ),
-                  to: amount,
-                  rate
-                }
-              ]
-            };
-            break;
-          }
-        } else {
-          const slotTax = Math.round((incomeAmount * rate) / 100);
-          taxAmount = {
-            total: taxAmount.total + slotTax,
-            details: [
-              ...taxAmount.details,
-              {
-                tax: Math.round(slotTax),
-                from: Math.floor(
-                  taxAmount.details[taxAmount.details.length - 1].to
-                ),
-                to: Math.floor(
-                  taxAmount.details[taxAmount.details.length - 1].to +
-                    incomeAmount
-                ),
-                rate
-              }
-            ]
-          };
-          incomeAmount = 0;
+          break;
         }
+      } else {
+        const slotTax = Math.round((incomeAmount * rate) / 100);
+        taxAmount = {
+          total: taxAmount.total + slotTax,
+          details: [
+            ...taxAmount.details,
+            {
+              tax: Math.round(slotTax),
+              from: Math.floor(
+                taxAmount.details[taxAmount.details.length - 1].to
+              ),
+              to: Math.floor(
+                taxAmount.details[taxAmount.details.length - 1].to +
+                  incomeAmount
+              ),
+              rate
+            }
+          ]
+        };
+        incomeAmount = 0;
       }
-      this.setState({tax: taxAmount, totalMonthlyIncome : amount, otherTax: totalMonthly, otherIncome: totalOtherIncome})
     }
+    return taxAmount;
   };
 
   handleDelete = (i) => {
@@ -151,18 +169,19 @@ class App extends Component {
       this.calculate()
     })
   }
+
   render(){
     const {income, customTax, totalMonthlyIncome, otherTax, tax } = this.state;
 
     return (
       <Box sx={{ flexGrow: 1 }} p={5}>
         <Grid container spacing={2}>
-          {this.title("Income Tax - 2022")}
+          {this.title("Income Tax Calculator")}
           {this.monthlyIncome()}
           {this.annualIncome()}
           {customTax.length > 0 ? this.customTaxTable() : ""}
-          {totalMonthlyIncome <= 100_000 ? "" : this.taxTable()}
-          {!(Math.floor(tax.total+otherTax) > 0)? "" : this.incomeTaxOutput()}
+          {totalMonthlyIncome > 150000 ? this.taxTable() : ""}
+          {totalMonthlyIncome > 100000 ? this.taxOutput() : ""}
         </Grid>
         <Description></Description>
         <CustomTaxInput addtionaltax = {this.createAdditonTax}/>
@@ -187,21 +206,52 @@ class App extends Component {
     </Grid>;
   }
 
-  incomeTaxOutput() {
-    const {tax, otherTax, totalMonthlyIncome, otherIncome} = this.state;
-    return <Grid item xs={12}>
-      <Typography variant="h5">
-        Income Tax: Rs.{Math.floor(tax.total+otherTax).toLocaleString()}
-      </Typography>
-      <Typography variant="h5">
-        Total Income: Rs.
-        {(Number(totalMonthlyIncome) + Number(otherIncome)).toLocaleString()}
-      </Typography>
-      <Typography variant="h5">
-        Income After Tax: Rs.
-        {(Number(totalMonthlyIncome) + Number(otherIncome) - Number(Math.floor(tax.total+otherTax))).toLocaleString()}
-      </Typography>
-    </Grid>;
+  taxOutput() {
+    const {tax, oldTax, otherTax, totalMonthlyIncome, otherIncome} = this.state;
+    const taxDifference = Math.floor(oldTax.total - tax.total);
+    const taxReductionPercentage = ((taxDifference / oldTax.total) * 100).toFixed(2);
+    const epfDeduction = totalMonthlyIncome * 0.08;
+    const incomeAfterTaxAndEpf = Number(totalMonthlyIncome) + Number(otherIncome) - Number(Math.floor(tax.total+otherTax)) - epfDeduction;
+    
+    if (totalMonthlyIncome <= 150000) {
+      return <Grid item xs={12}>
+        <Typography variant="h5" sx={{ color: 'green', mb: 2 }}>
+          Your income (Rs.{totalMonthlyIncome.toLocaleString()}) is now tax free under the new threshold!
+        </Typography>
+        <Typography variant="h5">
+          Previous Tax Amount: Rs.{Math.floor(oldTax.total+otherTax).toLocaleString()}
+        </Typography>
+        <Typography variant="h5" sx={{ color: 'green' }}>
+          You Save: Rs.{Math.floor(oldTax.total+otherTax).toLocaleString()} (100% reduction)
+        </Typography>
+        <Typography variant="h5">
+          Income After EPF (8%): Rs.{(totalMonthlyIncome - epfDeduction).toLocaleString()}
+        </Typography>
+      </Grid>;
+    }
+
+    return (
+      <Grid item xs={12}>
+        <Typography variant="h5">
+          Previous Tax (100k threshold): Rs.{Math.floor(oldTax.total+otherTax).toLocaleString()}
+        </Typography>
+        <Typography variant="h5">
+          New Tax (150k threshold): Rs.{Math.floor(tax.total+otherTax).toLocaleString()}
+        </Typography>
+        <Typography variant="h5" sx={{ color: 'green' }}>
+          Tax Reduction: Rs.{taxDifference.toLocaleString()} ({taxReductionPercentage}%)
+        </Typography>
+        <Typography variant="h5">
+          Total Income: Rs.{(Number(totalMonthlyIncome) + Number(otherIncome)).toLocaleString()}
+        </Typography>
+        <Typography variant="h5">
+          Income After Tax: Rs.{(Number(totalMonthlyIncome) + Number(otherIncome) - Number(Math.floor(tax.total+otherTax))).toLocaleString()}
+          {' '}<Typography component="span" sx={{ color: 'gray' }}>
+            (After EPF: Rs.{incomeAfterTaxAndEpf.toLocaleString()})
+          </Typography>
+        </Typography>
+      </Grid>
+    );
   }
 
   annualIncome() {
@@ -267,9 +317,23 @@ class App extends Component {
   }
 
   taxTable() {
-    const {tax} = this.state;
+    const {tax, oldTax, totalMonthlyIncome} = this.state;
+    if (totalMonthlyIncome <= 0) return null;
+    
+    // Get the longer of the two detail arrays
+    const detailsToShow = oldTax.details.length > tax.details.length ? 
+      oldTax.details.map((oldRow, index) => ({
+        oldRow,
+        newRow: tax.details[index] || null
+      })) :
+      tax.details.map((newRow, index) => ({
+        oldRow: oldTax.details[index] || null,
+        newRow
+      }));
+    
     return (
     <Grid item xs={12}>
+      <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>Tax Breakdown Comparison</Typography>
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 150 }} aria-label="simple table">
           <TableHead>
@@ -280,18 +344,40 @@ class App extends Component {
             </TableRow>
           </TableHead>
           <TableBody>
-            {tax.details.map((row) => (
-              <TableRow
-                key={`Rs.${row.from} - Rs.${row.to}`}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-              >
-                <TableCell component="th" scope="row">
-                  {`Rs.${row.from} - Rs.${row.to}`}
-                </TableCell>
-                <TableCell align="right">{row.rate}</TableCell>
-                <TableCell align="right">{row.tax}</TableCell>
-              </TableRow>
-            ))}
+            {detailsToShow.map((detail, index) => {
+              const { oldRow, newRow } = detail;
+              return (
+                <TableRow
+                  key={`tax-row-${index}`}
+                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">
+                    {oldRow && (!newRow || oldRow.from !== newRow.from) && (
+                      <Typography component="span" sx={{ color: 'red', textDecoration: 'line-through', display: 'block' }}>
+                        {`Rs.${oldRow.from} - Rs.${oldRow.to}`}
+                      </Typography>
+                    )}
+                    {newRow && `Rs.${newRow.from} - Rs.${newRow.to}`}
+                  </TableCell>
+                  <TableCell align="right">
+                    {oldRow && (!newRow || oldRow.rate !== newRow.rate) && (
+                      <Typography component="span" sx={{ color: 'red', textDecoration: 'line-through', display: 'block' }}>
+                        {oldRow.rate}
+                      </Typography>
+                    )}
+                    {newRow && newRow.rate}
+                  </TableCell>
+                  <TableCell align="right">
+                    {oldRow && (!newRow || oldRow.tax !== newRow.tax) && (
+                      <Typography component="span" sx={{ color: 'red', textDecoration: 'line-through', display: 'block' }}>
+                        {oldRow.tax}
+                      </Typography>
+                    )}
+                    {newRow && newRow.tax}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
