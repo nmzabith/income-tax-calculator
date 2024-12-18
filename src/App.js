@@ -310,8 +310,11 @@ class App extends Component {
     const {tax, oldTax, otherTax, totalMonthlyIncome, otherIncome} = this.state;
     const taxDifference = Math.floor(oldTax.total - tax.total);
     const taxReductionPercentage = ((taxDifference / oldTax.total) * 100).toFixed(2);
+    // Calculate EPF only from monthly salary
     const epfDeduction = totalMonthlyIncome * 0.08;
-    const incomeAfterTaxAndEpf = Number(totalMonthlyIncome) + Number(otherIncome) - Number(Math.floor(tax.total+otherTax)) - epfDeduction;
+    // Calculate final income after tax and EPF separately
+    const totalAfterTax = Number(totalMonthlyIncome) + Number(otherIncome) - Number(Math.floor(tax.total+otherTax));
+    const incomeAfterTaxAndEpf = totalAfterTax - epfDeduction;
     
     if (totalMonthlyIncome <= 150000) {
       return <Grid item xs={12}>
@@ -325,7 +328,7 @@ class App extends Component {
           You Save: Rs.{Math.floor(oldTax.total+otherTax).toLocaleString()} (100% reduction)
         </Typography>
         <Typography variant="h5">
-          Income After EPF (8%): Rs.{(totalMonthlyIncome - epfDeduction).toLocaleString()}
+          Income After EPF: Rs.{Math.round(totalMonthlyIncome - epfDeduction).toLocaleString()}
         </Typography>
       </Grid>;
     }
@@ -345,9 +348,9 @@ class App extends Component {
           Total Income: Rs.{(Number(totalMonthlyIncome) + Number(otherIncome)).toLocaleString()}
         </Typography>
         <Typography variant="h5">
-          Income After Tax: Rs.{(Number(totalMonthlyIncome) + Number(otherIncome) - Number(Math.floor(tax.total+otherTax))).toLocaleString()}
+          Income After Tax: Rs.{totalAfterTax.toLocaleString()}
           {' '}<Typography component="span" sx={{ color: 'gray' }}>
-            (After EPF: Rs.{incomeAfterTaxAndEpf.toLocaleString()})
+            (After Tax & EPF: Rs.{Math.round(incomeAfterTaxAndEpf).toLocaleString()})
           </Typography>
         </Typography>
       </Grid>
