@@ -10,8 +10,16 @@ class Description extends Component {
   state = {};
   render() {
     return (
-      <Grid item xs={12} mt={2}>
-        <Typography variant="body2" color={"red"} fontWeight={"bold"}>
+      <Grid item xs={12} mt={{ xs: 1, sm: 2 }}>
+        <Typography 
+          variant="body2" 
+          color="red" 
+          fontWeight="bold"
+          sx={{
+            fontSize: { xs: '0.875rem', sm: '0.875rem' },
+            lineHeight: { xs: 1.4, sm: 1.6 }
+          }}
+        >
           Important: The new tax amendments are pending parliamentary approval and the effective date is yet to be announced. 
           This calculation uses proposed changes as of 18/12/2024 10 PM. Real implementation may vary based on final legislation.
           This is done on a rough basis considering your given incomes only. The real calculation may include multiple other incomes.
@@ -27,10 +35,14 @@ class Description extends Component {
         </Typography>
         <Typography
           variant="body2"
-          color={"blue"}
-          fontWeight={"bold"}
-          marginTop={"8px"}
-          marginBottom={"8px"}
+          color="blue"
+          fontWeight="bold"
+          sx={{
+            fontSize: { xs: '0.875rem', sm: '0.875rem' },
+            lineHeight: { xs: 1.4, sm: 1.6 },
+            mt: { xs: 1, sm: 2 },
+            mb: { xs: 1, sm: 2 }
+          }}
         >
           Info: Updated tax structure as of 10 PM 19/12/2024 - Tax free threshold increased to Rs.150,000 (previously Rs.100,000). 
           First 6% tax slab increased to Rs.1 Million (previously Rs.500k). The 12% tax bracket has been removed, 
