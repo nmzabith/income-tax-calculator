@@ -12,8 +12,9 @@ class Description extends Component {
     return (
       <Grid item xs={12} mt={2}>
         <Typography variant="body2" color={"red"} fontWeight={"bold"}>
-          Caution: This calculation uses information as of 18/12/2024 5 PM, May change after official circular release. This is done on a rough basis considering your given
-          incomes only. The real calculation may include multiple other incomes.
+          Important: The new tax amendments are pending parliamentary approval and the effective date is yet to be announced. 
+          This calculation uses proposed changes as of 18/12/2024 5 PM. Real implementation may vary based on final legislation.
+          This is done on a rough basis considering your given incomes only. The real calculation may include multiple other incomes.
           Refer IRD document
           <Chip
             label="IRD"
