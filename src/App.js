@@ -336,7 +336,7 @@ class App extends Component {
           Previous Tax (100k threshold): Rs.{Math.floor(oldTax.total+otherTax).toLocaleString()}
         </Typography>
         <Typography variant="h5">
-          New Tax (150k threshold): Rs.{Math.floor(tax.total+otherTax).toLocaleString()}
+          New Tax (150k threshold & 6% slab change): Rs.{Math.floor(tax.total+otherTax).toLocaleString()}
         </Typography>
         <Typography variant="h5" sx={{ color: 'green' }}>
           Tax Reduction: Rs.{taxDifference.toLocaleString()} ({taxReductionPercentage}%)
@@ -454,10 +454,10 @@ class App extends Component {
                   <TableCell component="th" scope="row">
                     {oldRow && (!newRow || oldRow.from !== newRow.from) && (
                       <Typography component="span" sx={{ color: 'red', textDecoration: 'line-through', display: 'block' }}>
-                        {`Rs.${oldRow.from} - Rs.${oldRow.to}`}
+                        {`Rs.${Math.round(oldRow.from).toLocaleString()} - Rs.${Math.round(oldRow.to).toLocaleString()}`}
                       </Typography>
                     )}
-                    {newRow && `Rs.${newRow.from} - Rs.${newRow.to}`}
+                    {newRow && `Rs.${Math.round(newRow.from).toLocaleString()} - Rs.${Math.round(newRow.to).toLocaleString()}`}
                   </TableCell>
                   <TableCell align="right">
                     {oldRow && (!newRow || oldRow.rate !== newRow.rate) && (
@@ -470,10 +470,10 @@ class App extends Component {
                   <TableCell align="right">
                     {oldRow && (!newRow || oldRow.tax !== newRow.tax) && (
                       <Typography component="span" sx={{ color: 'red', textDecoration: 'line-through', display: 'block' }}>
-                        {oldRow.tax}
+                        {Math.round(oldRow.tax).toLocaleString()}
                       </Typography>
                     )}
-                    {newRow && newRow.tax}
+                    {newRow && Math.round(newRow.tax).toLocaleString()}
                   </TableCell>
                 </TableRow>
               );
