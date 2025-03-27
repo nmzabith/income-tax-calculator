@@ -15,7 +15,12 @@ import Description from "./components/descriptions";
 import SocialMedia from "./components/socialIcons";
 import React, { Component } from 'react';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { calculateNewTax, calculateOldTax } from './utils/taxCalculations';
+import { calculateNewTax, calculateOldTax, calculateForeignRemittanceTax } from './utils/taxCalculations';
+import { getUsdToLkrRate, convertUsdToLkr } from './services/currencyService';
+import TaxTypeToggle from './components/TaxTypeToggle';
+import CurrencyToggle from './components/CurrencyToggle';
+import InputAdornment from '@mui/material/InputAdornment';
+import CircularProgress from '@mui/material/CircularProgress';
 import TaxBreakdownTable from './components/TaxBreakdownTable';
 import TaxOutput from './components/TaxOutput';
 
@@ -25,32 +30,155 @@ class App extends Component {
     income: { monthly: 0, annualy: 0 },
     tax: { total: 0, details: [] },
     customTax: [],
-    oldTax: { total: 0, details: [] }
+    oldTax: { total: 0, details: [] },
+    isForeignRemittance: false,
+    currency: 'LKR',
+    exchangeRate: null,
+    isLoading: false
   }
 
-  handleMonthlyAmountChange = (event) => {
+  componentDidMount() {
+    this.fetchExchangeRate();
+  }
+
+  fetchExchangeRate = async () => {
+    const rate = await getUsdToLkrRate();
+    this.setState({ exchangeRate: rate });
+  }
+
+  handleMonthlyAmountChange = async (event) => {
     const amount = Number(event.target.value);
-    this.setState(
-      { income: { monthly: amount, annualy: amount * 12 } }, 
-      this.calculate
-    );
+    this.setState({ isLoading: true });
+    
+    try {
+      let convertedAmount = amount;
+      
+      // Convert from USD to LKR if needed
+      if (this.state.currency === 'USD') {
+        convertedAmount = await convertUsdToLkr(amount);
+      }
+      
+      this.setState(
+        { 
+          income: { 
+            monthly: amount, 
+            annualy: amount * 12,
+            convertedMonthly: convertedAmount
+          } 
+        }, 
+        () => {
+          this.calculate();
+          this.setState({ isLoading: false });
+        }
+      );
+    } catch (error) {
+      console.error('Error converting currency:', error);
+      this.setState({ isLoading: false });
+    }
   };
 
-  handleAnnualAmountChange = (event) => {
+  handleAnnualAmountChange = async (event) => {
     const amount = Number(event.target.value);
-    this.setState(
-      { income: { monthly: amount / 12, annualy: amount } }, 
-      this.calculate
-    );
+    const monthly = amount / 12;
+    
+    this.setState({ isLoading: true });
+    
+    try {
+      let convertedMonthly = monthly;
+      
+      // Convert from USD to LKR if needed
+      if (this.state.currency === 'USD') {
+        convertedMonthly = await convertUsdToLkr(monthly);
+      }
+      
+      this.setState(
+        { 
+          income: { 
+            monthly, 
+            annualy: amount,
+            convertedMonthly
+          } 
+        }, 
+        () => {
+          this.calculate();
+          this.setState({ isLoading: false });
+        }
+      );
+    } catch (error) {
+      console.error('Error converting currency:', error);
+      this.setState({ isLoading: false });
+    }
+  };
+
+  handleTaxTypeChange = (isForeignRemittance) => {
+    // If switching from foreign remittance to regular income, reset to LKR
+    if (!isForeignRemittance && this.state.currency === 'USD') {
+      this.setState({ 
+        isForeignRemittance,
+        currency: 'LKR',
+        // Remove the converted value since we're switching to LKR
+        income: {
+          ...this.state.income,
+          convertedMonthly: this.state.income.monthly
+        }
+      }, this.calculate);
+    } else {
+      this.setState({ isForeignRemittance }, this.calculate);
+    }
+  };
+
+  handleCurrencyChange = async (currency) => {
+    this.setState({ currency, isLoading: true });
+    
+    try {
+      if (this.state.income.monthly) {
+        let convertedMonthly;
+        
+        if (currency === 'USD') {
+          // Get the latest rate
+          const rate = await getUsdToLkrRate();
+          this.setState({ exchangeRate: rate });
+          
+          // Convert LKR to USD if switching to USD
+          convertedMonthly = await convertUsdToLkr(this.state.income.monthly);
+        } else {
+          // When switching back to LKR, we use the stored converted value
+          convertedMonthly = this.state.income.monthly;
+        }
+        
+        this.setState({
+          income: {
+            ...this.state.income,
+            convertedMonthly
+          }
+        }, () => {
+          this.calculate();
+          this.setState({ isLoading: false });
+        });
+      } else {
+        this.setState({ isLoading: false });
+      }
+    } catch (error) {
+      console.error('Error converting currency:', error);
+      this.setState({ isLoading: false });
+    }
   };
 
   calculate = () => {
-    const { income, customTax } = this.state;
-    const amount = Number(income.monthly);
+    const { income, customTax, isForeignRemittance, currency } = this.state;
     const { totalOtherIncome, totalTax } = this.calculateCustomTax(customTax);
-
+    
+    // Use the converted amount for calculations if currency is USD
+    const amount = currency === 'USD' ? 
+      (income.convertedMonthly || 0) : 
+      Number(income.monthly);
+    
     const oldTaxAmount = calculateOldTax(amount, 100000);
-    const newTaxAmount = calculateNewTax(amount, 150000);
+    
+    // Use the appropriate tax calculation method
+    const newTaxAmount = isForeignRemittance ?
+      calculateForeignRemittanceTax(amount, 150000) :
+      calculateNewTax(amount, 150000);
 
     this.setState({
       tax: newTaxAmount,
@@ -82,40 +210,106 @@ class App extends Component {
   }
 
   render(){
-    const {income, customTax, totalMonthlyIncome, otherTax, tax, oldTax, otherIncome } = this.state;
+    const {
+      income, 
+      customTax, 
+      totalMonthlyIncome, 
+      otherTax, 
+      tax, 
+      oldTax, 
+      otherIncome,
+      isForeignRemittance,
+      currency,
+      exchangeRate,
+      isLoading
+    } = this.state;
 
     return (
       <Box sx={{ 
         flexGrow: 1,
-        p: { xs: 2, sm: 3, md: 5 }  // Responsive padding
+        p: { xs: 2, sm: 3, md: 5 }
       }}>
-        <Grid container spacing={{ xs: 2, md: 3 }}>  {/* Responsive spacing */}
-          <Grid item xs={12} mb={{ xs: 2, md: 3 }}>  {/* Added margin bottom to title */}
+        <Grid container spacing={{ xs: 2, md: 3 }}>
+          <Grid item xs={12} mb={{ xs: 2, md: 3 }}>
             {this.title("Income Tax Calculator")}
           </Grid>
+          
+          {/* Move tax type toggle to the top */}
+          <Grid item xs={12}>
+            <TaxTypeToggle 
+              isForeignRemittance={isForeignRemittance} 
+              onTaxTypeChange={this.handleTaxTypeChange} 
+            />
+          </Grid>
+          
+          {/* Only show currency toggle for foreign remittance */}
+          {isForeignRemittance && (
+            <Grid item xs={12}>
+              <CurrencyToggle 
+                currency={currency} 
+                exchangeRate={exchangeRate} 
+                onCurrencyChange={this.handleCurrencyChange} 
+              />
+            </Grid>
+          )}
           
           <Grid item xs={12} sm={6}>
             <TextField
               id="outlined-m"
-              label="Monthly Salary"
+              label={`Monthly ${isForeignRemittance && currency === 'USD' ? 'Salary in USD' : 'Salary'}`}
               variant="outlined"
-              value={this.state.income.monthly != 0 ? this.state.income.monthly : ""}
+              value={income.monthly !== 0 ? income.monthly : ""}
               onChange={this.handleMonthlyAmountChange}
               fullWidth
               type="number"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    {isForeignRemittance ? currency : "LKR"}
+                  </InputAdornment>
+                ),
+                endAdornment: isLoading ? (
+                  <InputAdornment position="end">
+                    <CircularProgress size={20} />
+                  </InputAdornment>
+                ) : null
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
               id="outlined-a"
-              label="Annual Salary"
+              label={`Annual ${isForeignRemittance && currency === 'USD' ? 'Salary in USD' : 'Salary'}`}
               variant="outlined"
-              value={this.state.income.annualy != 0 ? this.state.income.annualy : ""}
+              value={income.annualy !== 0 ? income.annualy : ""}
               onChange={this.handleAnnualAmountChange}
               fullWidth
               type="number"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    {isForeignRemittance ? currency : "LKR"}
+                  </InputAdornment>
+                ),
+                endAdornment: isLoading ? (
+                  <InputAdornment position="end">
+                    <CircularProgress size={20} />
+                  </InputAdornment>
+                ) : null
+              }}
             />
           </Grid>
+
+          {/* Only show currency conversion info for foreign remittance in USD */}
+          {isForeignRemittance && currency === 'USD' && exchangeRate && !isLoading && income.convertedMonthly > 0 && (
+            <Grid item xs={12}>
+              <Paper sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
+                <Typography variant="body2">
+                  {`Equivalent in LKR: Monthly ${Math.round(income.convertedMonthly).toLocaleString()} LKR, Annual ${Math.round(income.convertedMonthly * 12).toLocaleString()} LKR`}
+                </Typography>
+              </Paper>
+            </Grid>
+          )}
 
           {customTax.length > 0 && (
             <Grid item xs={12} mb={3}>
@@ -125,11 +319,16 @@ class App extends Component {
 
           {totalMonthlyIncome > 150000 && (
             <Grid item xs={12} mb={3}>
-              <TaxBreakdownTable oldTax={oldTax} newTax={tax} />
+              <TaxBreakdownTable 
+                oldTax={oldTax} 
+                newTax={tax} 
+                isForeignRemittance={isForeignRemittance}
+              />
             </Grid>
           )}
 
-          {totalMonthlyIncome > 100000 && (
+          {/* Only show TaxOutput for regular income, not for foreign remittance */}
+          {totalMonthlyIncome > 100000 && !isForeignRemittance && (
             <Grid item xs={12} mb={3}>
               <TaxOutput 
                 tax={tax}
