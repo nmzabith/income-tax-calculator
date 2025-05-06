@@ -23,6 +23,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 import TaxBreakdownTable from './components/TaxBreakdownTable';
 import TaxOutput from './components/TaxOutput';
+import Helmet from 'react-helmet';
 
 class App extends Component {
   state = {  
@@ -225,134 +226,150 @@ class App extends Component {
     } = this.state;
 
     return (
-      <Box sx={{ 
-        flexGrow: 1,
-        p: { xs: 2, sm: 3, md: 5 }
-      }}>
-        <Grid container spacing={{ xs: 2, md: 3 }}>
-          <Grid item xs={12} mb={{ xs: 2, md: 3 }}>
-            {this.title("Income Tax Calculator")}
-          </Grid>
-          
-          {/* Move tax type toggle to the top */}
-          <Grid item xs={12}>
-            <TaxTypeToggle 
-              isForeignRemittance={isForeignRemittance} 
-              onTaxTypeChange={this.handleTaxTypeChange} 
-            />
-          </Grid>
-          
-          {/* Only show currency toggle for foreign remittance */}
-          {isForeignRemittance && (
+      <>
+        <Helmet>
+          <title>Sri Lanka Income Tax Calculator 2024/2025 | PAYE Tax Online Tool</title>
+          <meta name="description" content="Calculate your income tax in Sri Lanka for 2024/2025 with our free PAYE tax calculator. Supports foreign remittance and latest tax amendments." />
+        </Helmet>
+        <Box component="main" role="main" sx={{ 
+          flexGrow: 1,
+          p: { xs: 2, sm: 3, md: 5 }
+        }}>
+          <Grid container spacing={{ xs: 2, md: 3 }}>
+            <Grid item xs={12} mb={{ xs: 2, md: 3 }}>
+              <header>
+                {this.title("Sri Lanka Income Tax Calculator 2024/2025")}
+              </header>
+            </Grid>
+            
+            {/* Move tax type toggle to the top */}
             <Grid item xs={12}>
-              <CurrencyToggle 
-                currency={currency} 
-                exchangeRate={exchangeRate} 
-                onCurrencyChange={this.handleCurrencyChange} 
+              <TaxTypeToggle 
+                isForeignRemittance={isForeignRemittance} 
+                onTaxTypeChange={this.handleTaxTypeChange} 
               />
             </Grid>
-          )}
-          
-          <Grid item xs={12} sm={6}>
-            <TextField
-              id="outlined-m"
-              label={`Monthly ${isForeignRemittance && currency === 'USD' ? 'Salary in USD' : 'Salary'}`}
-              variant="outlined"
-              value={income.monthly !== 0 ? income.monthly : ""}
-              onChange={this.handleMonthlyAmountChange}
-              fullWidth
-              type="number"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    {isForeignRemittance ? currency : "LKR"}
-                  </InputAdornment>
-                ),
-                endAdornment: isLoading ? (
-                  <InputAdornment position="end">
-                    <CircularProgress size={20} />
-                  </InputAdornment>
-                ) : null
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              id="outlined-a"
-              label={`Annual ${isForeignRemittance && currency === 'USD' ? 'Salary in USD' : 'Salary'}`}
-              variant="outlined"
-              value={income.annualy !== 0 ? income.annualy : ""}
-              onChange={this.handleAnnualAmountChange}
-              fullWidth
-              type="number"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    {isForeignRemittance ? currency : "LKR"}
-                  </InputAdornment>
-                ),
-                endAdornment: isLoading ? (
-                  <InputAdornment position="end">
-                    <CircularProgress size={20} />
-                  </InputAdornment>
-                ) : null
-              }}
-            />
-          </Grid>
+            
+            {/* Only show currency toggle for foreign remittance */}
+            {isForeignRemittance && (
+              <Grid item xs={12}>
+                <CurrencyToggle 
+                  currency={currency} 
+                  exchangeRate={exchangeRate} 
+                  onCurrencyChange={this.handleCurrencyChange} 
+                />
+              </Grid>
+            )}
+            
+            <Grid item xs={12} sm={6}>
+              <TextField
+                id="monthly-salary-input"
+                label={`Monthly ${isForeignRemittance && currency === 'USD' ? 'Salary in USD' : 'Salary'}`}
+                variant="outlined"
+                value={income.monthly !== 0 ? income.monthly : ""}
+                onChange={this.handleMonthlyAmountChange}
+                fullWidth
+                type="number"
+                aria-label="Monthly Salary Input"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      {isForeignRemittance ? currency : "LKR"}
+                    </InputAdornment>
+                  ),
+                  endAdornment: isLoading ? (
+                    <InputAdornment position="end">
+                      <CircularProgress size={20} aria-label="Loading" />
+                    </InputAdornment>
+                  ) : null
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                id="annual-salary-input"
+                label={`Annual ${isForeignRemittance && currency === 'USD' ? 'Salary in USD' : 'Salary'}`}
+                variant="outlined"
+                value={income.annualy !== 0 ? income.annualy : ""}
+                onChange={this.handleAnnualAmountChange}
+                fullWidth
+                type="number"
+                aria-label="Annual Salary Input"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      {isForeignRemittance ? currency : "LKR"}
+                    </InputAdornment>
+                  ),
+                  endAdornment: isLoading ? (
+                    <InputAdornment position="end">
+                      <CircularProgress size={20} aria-label="Loading" />
+                    </InputAdornment>
+                  ) : null
+                }}
+              />
+            </Grid>
 
-          {/* Only show currency conversion info for foreign remittance in USD */}
-          {isForeignRemittance && currency === 'USD' && exchangeRate && !isLoading && income.convertedMonthly > 0 && (
+            {/* Only show currency conversion info for foreign remittance in USD */}
+            {isForeignRemittance && currency === 'USD' && exchangeRate && !isLoading && income.convertedMonthly > 0 && (
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
+                  <Typography variant="body2">
+                    {`Equivalent in LKR: Monthly ${Math.round(income.convertedMonthly).toLocaleString()} LKR, Annual ${Math.round(income.convertedMonthly * 12).toLocaleString()} LKR`}
+                  </Typography>
+                </Paper>
+              </Grid>
+            )}
+
+            {customTax.length > 0 && (
+              <Grid item xs={12} mb={3}>
+                <CustomTaxTable customTax={customTax} onDelete={this.handleDelete} />
+              </Grid>
+            )}
+
+            {totalMonthlyIncome > 150000 && (
+              <Grid item xs={12} mb={3}>
+                <TaxBreakdownTable 
+                  oldTax={oldTax} 
+                  newTax={tax} 
+                  isForeignRemittance={isForeignRemittance}
+                />
+              </Grid>
+            )}
+
+            {/* Only show TaxOutput for regular income, not for foreign remittance */}
+            {totalMonthlyIncome > 100000 && !isForeignRemittance && (
+              <Grid item xs={12} mb={3}>
+                <TaxOutput 
+                  tax={tax}
+                  oldTax={oldTax}
+                  otherTax={otherTax}
+                  totalMonthlyIncome={totalMonthlyIncome}
+                  otherIncome={otherIncome}
+                />
+              </Grid>
+            )}
+
+            <Grid item xs={12} mb={3}>
+              <section aria-label="Tax Information">
+                <Description />
+              </section>
+            </Grid>
+
+            <Grid item xs={12} mb={3}>
+              <section aria-label="Additional Tax Input">
+                <CustomTaxInput addtionaltax={this.createAdditonTax} />
+              </section>
+            </Grid>
+
             <Grid item xs={12}>
-              <Paper sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
-                <Typography variant="body2">
-                  {`Equivalent in LKR: Monthly ${Math.round(income.convertedMonthly).toLocaleString()} LKR, Annual ${Math.round(income.convertedMonthly * 12).toLocaleString()} LKR`}
-                </Typography>
-              </Paper>
+              <footer>
+                <SocialMedia />
+              </footer>
             </Grid>
-          )}
-
-          {customTax.length > 0 && (
-            <Grid item xs={12} mb={3}>
-              <CustomTaxTable customTax={customTax} onDelete={this.handleDelete} />
-            </Grid>
-          )}
-
-          {totalMonthlyIncome > 150000 && (
-            <Grid item xs={12} mb={3}>
-              <TaxBreakdownTable 
-                oldTax={oldTax} 
-                newTax={tax} 
-                isForeignRemittance={isForeignRemittance}
-              />
-            </Grid>
-          )}
-
-          {/* Only show TaxOutput for regular income, not for foreign remittance */}
-          {totalMonthlyIncome > 100000 && !isForeignRemittance && (
-            <Grid item xs={12} mb={3}>
-              <TaxOutput 
-                tax={tax}
-                oldTax={oldTax}
-                otherTax={otherTax}
-                totalMonthlyIncome={totalMonthlyIncome}
-                otherIncome={otherIncome}
-              />
-            </Grid>
-          )}
-
-          <Grid item xs={12} mb={3}>
-            <Description />
           </Grid>
-
-          <Grid item xs={12} mb={3}>
-            <CustomTaxInput addtionaltax={this.createAdditonTax} />
-          </Grid>
-
-          <Grid item xs={12}>
-            <SocialMedia />
-          </Grid>
-        </Grid>
-      </Box>
+        </Box>
+      </>
     );
   }
 
@@ -367,13 +384,14 @@ class App extends Component {
   title(title) {
     return (
       <Typography 
-        variant="h4" 
+        variant="h1" 
+        component="h1"
         sx={{ 
           textAlign: "center",
           fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }  // Responsive font size
         }}
       >
-        {title}
+        Sri Lanka Income Tax Calculator 2025/2026
       </Typography>
     );
   }

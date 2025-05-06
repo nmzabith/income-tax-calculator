@@ -7,10 +7,30 @@
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
     <meta name="theme-color" content="#000000" />
-    <!--
-      manifest.json provides metadata used when your web app is added to the
-      homescreen on Android. See https://developers.google.com/web/fundamentals/engage-and-retain/web-app-manifest/
-    -->
+    
+    <!-- Primary Meta Tags -->
+    <title>Sri Lanka Income Tax Calculator 2025/2026 | PAYE Tax Tool</title>
+    <meta name="description" content="Calculate your income tax in Sri Lanka for 2025/2026. Free online PAYE tax calculator with the latest tax amendments and foreign remittance options." />
+    <meta name="keywords" content="income tax calculator, Sri Lanka tax, PAYE tax, tax calculator, 2025 tax, 2026 tax, foreign remittance tax, Sri Lanka PAYE, tax tool" />
+    <meta name="author" content="PayeTax Calculator" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://payetax.netlify.app/" />
+    <meta property="og:title" content="Sri Lanka Income Tax Calculator 2025/2026" />
+    <meta property="og:description" content="Free online tool to calculate your income tax in Sri Lanka based on the latest tax amendments for 2025/2026." />
+    <meta property="og:image" content="%PUBLIC_URL%/tax-calculator-preview.png" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://payetax.netlify.app/" />
+    <meta property="twitter:title" content="Sri Lanka Income Tax Calculator 2025/2026" />
+    <meta property="twitter:description" content="Free online tool to calculate your income tax in Sri Lanka based on the latest tax amendments for 2025/2026." />
+    <meta property="twitter:image" content="%PUBLIC_URL%/tax-calculator-preview.png" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://payetax.netlify.app/" />
+    
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico" />
     <!--
@@ -22,7 +42,6 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>Income Tax Calculator 2024/2025</title>
   </head>
 
   <body>
@@ -40,5 +59,69 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+    
+    <!-- Structured Data - JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Sri Lanka Income Tax Calculator 2025/2026",
+      "alternateName": "PAYE Tax Calculator Sri Lanka",
+      "url": "https://payetax.netlify.app/",
+      "description": "Free online income tax calculator for Sri Lanka 2025/2026. Calculate PAYE tax, inland revenue tax, and new tax rates with our easy-to-use tool.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "All",
+      "keywords": "income tax calculator sri lanka 2025, new paye tax calculator 2025, sri lanka tax calculator, new tax calculator 2025 sri lanka, pay tax calculator 2025, inland revenue tax calculator, paye calculator",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "LKR"
+      },
+      "mainEntity": {
+        "@type": "SoftwareApplication",
+        "name": "Sri Lanka Income Tax Calculator 2025/2026",
+        "applicationCategory": "TaxCalculator",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0"
+        }
+      },
+      "potentialAction": {
+        "@type": "UseAction",
+        "target": "https://payetax.netlify.app/"
+      }
+    }
+    </script>
+
+    <!-- Additional Rich Snippet for FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": "How do I calculate income tax in Sri Lanka for 2025/2026?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Use our free online Sri Lanka Income Tax Calculator 2025/2026 to calculate your PAYE tax. Enter your monthly or annual salary, and our calculator will instantly show your tax liability based on the new tax rates for 2025/2026."
+        }
+      }, {
+        "@type": "Question",
+        "name": "What are the new PAYE tax rates in Sri Lanka for 2025/2026?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "As of 2025/2026, the tax-free threshold is Rs.150,000 (previously Rs.100,000). The first 6% tax slab increased to Rs.1 Million (previously Rs.500k). The 12% tax bracket has been removed, and subsequent tax rates continue at 6% increments (18% → 24% → 30% → 36%)."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Can I calculate tax on foreign remittance with this calculator?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, our Sri Lanka Income Tax Calculator supports both standard Sri Lankan income tax calculation and foreign remittance tax calculations, allowing you to estimate your tax obligations accurately."
+        }
+      }]
+    }
+    </script>
   </body>
 </html>
