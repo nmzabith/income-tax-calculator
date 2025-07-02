@@ -8,7 +8,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { Typography } from "@mui/material";
+import { Typography, Container, ThemeProvider } from "@mui/material";
 import { Alert, Checkbox, FormControlLabel } from "@mui/material";
 import {} from "bootstrap";
 import CustomTaxInput from "./components/customTaxComponent";
@@ -26,6 +26,9 @@ import CircularProgress from '@mui/material/CircularProgress';
 import TaxBreakdownTable from './components/TaxBreakdownTable';
 import TaxOutput from './components/TaxOutput';
 import Helmet from 'react-helmet';
+import Header from './components/Header';
+import InputCard from './components/InputCard';
+import theme from './theme/theme';
 
 class App extends Component {
   state = {  
@@ -278,223 +281,182 @@ class App extends Component {
     } = this.state;
 
     return (
-      <>
+      <ThemeProvider theme={theme}>
         <Helmet>
           <title>Sri Lanka Income Tax Calculator 2024/2025 | PAYE Tax Online Tool</title>
           <meta name="description" content="Calculate your income tax in Sri Lanka for 2024/2025 with our free PAYE tax calculator. Supports foreign remittance and latest tax amendments." />
         </Helmet>
-        <Box component="main" role="main" sx={{ 
-          flexGrow: 1,
-          p: { xs: 2, sm: 3, md: 5 }
+        
+        <Box sx={{ 
+          minHeight: '100vh',
+          backgroundColor: 'background.default'
         }}>
-          <Grid container spacing={{ xs: 2, md: 3 }}>
-            <Grid item xs={12} mb={{ xs: 2, md: 3 }}>
-              <header>
-                {this.title("Sri Lanka Income Tax Calculator 2024/2025")}
-              </header>
-            </Grid>
-            
-            {/* Move tax type toggle to the top */}
-            <Grid item xs={12}>
-              <TaxTypeToggle 
-                isForeignRemittance={isForeignRemittance} 
-                onTaxTypeChange={this.handleTaxTypeChange} 
-              />
-            </Grid>
-            
-            {/* Only show currency toggle for foreign remittance */}
-            {isForeignRemittance && (
+          <Header />
+          
+          <Container maxWidth="lg" sx={{ pb: 6 }}>
+            <Grid container spacing={3}>
+              
+              {/* Tax Type Toggle */}
               <Grid item xs={12}>
-                <CurrencyToggle 
-                  currency={currency} 
-                  exchangeRate={exchangeRate} 
-                  onCurrencyChange={this.handleCurrencyChange} 
+                <TaxTypeToggle 
+                  isForeignRemittance={isForeignRemittance} 
+                  onTaxTypeChange={this.handleTaxTypeChange} 
                 />
               </Grid>
-            )}
-            
-            <Grid item xs={12} sm={6}>
-              <TextField
-                id="monthly-salary-input"
-                label={`Monthly ${isForeignRemittance && currency === 'USD' ? 'Salary in USD' : 'Salary'}`}
-                variant="outlined"
-                value={income.monthly !== 0 ? income.monthly : ""}
-                onChange={this.handleMonthlyAmountChange}
-                fullWidth
-                type="number"
-                aria-label="Monthly Salary Input"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      {isForeignRemittance ? currency : "LKR"}
-                    </InputAdornment>
-                  ),
-                  endAdornment: isLoading ? (
-                    <InputAdornment position="end">
-                      <CircularProgress size={20} aria-label="Loading" />
-                    </InputAdornment>
-                  ) : null
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                id="annual-salary-input"
-                label={`Annual ${isForeignRemittance && currency === 'USD' ? 'Salary in USD' : 'Salary'}`}
-                variant="outlined"
-                value={income.annualy !== 0 ? income.annualy : ""}
-                onChange={this.handleAnnualAmountChange}
-                fullWidth
-                type="number"
-                aria-label="Annual Salary Input"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      {isForeignRemittance ? currency : "LKR"}
-                    </InputAdornment>
-                  ),
-                  endAdornment: isLoading ? (
-                    <InputAdornment position="end">
-                      <CircularProgress size={20} aria-label="Loading" />
-                    </InputAdornment>
-                  ) : null
-                }}
-              />
-            </Grid>
-
-            {/* Only show currency conversion info for foreign remittance in USD */}
-            {isForeignRemittance && currency === 'USD' && exchangeRate && !isLoading && income.convertedMonthly > 0 && (
+              
+              {/* Currency Toggle for Foreign Remittance */}
+              {isForeignRemittance && (
+                <Grid item xs={12}>
+                  <CurrencyToggle 
+                    currency={currency} 
+                    exchangeRate={exchangeRate} 
+                    onCurrencyChange={this.handleCurrencyChange} 
+                  />
+                </Grid>
+              )}
+              
+              {/* Income Input Card */}
               <Grid item xs={12}>
-                <Paper sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
-                  <Typography variant="body2">
-                    {`Equivalent in LKR: Monthly ${Math.round(income.convertedMonthly).toLocaleString()} LKR, Annual ${Math.round(income.convertedMonthly * 12).toLocaleString()} LKR`}
-                  </Typography>
+                <InputCard
+                  income={income}
+                  isForeignRemittance={isForeignRemittance}
+                  currency={currency}
+                  isLoading={isLoading}
+                  exchangeRate={exchangeRate}
+                  onMonthlyAmountChange={this.handleMonthlyAmountChange}
+                  onAnnualAmountChange={this.handleAnnualAmountChange}
+                />
+              </Grid>
+
+              {/* Beta Bonus Calculation Feature */}
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2, mb: 2, backgroundColor: '#fff3e0', border: '1px solid #ff9800' }}>
+                  <Alert severity="warning" sx={{ mb: 2 }}>
+                    <Typography variant="body2">
+                      <strong>Beta Feature:</strong> Bonus tax calculations are experimental and may not be 100% accurate. 
+                      This feature provides a rough estimate for planning purposes only.
+                    </Typography>
+                  </Alert>
+                  
+                  <FormControlLabel
+                    control={
+                      <Checkbox 
+                        checked={isBonusEnabled} 
+                        onChange={(e) => this.handleBonusToggle(e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Enable Bonus Tax Calculation (Beta)"
+                  />
+                  
+                  {isBonusEnabled && (
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          id="bonus-amount-input"
+                          label="Annual Bonus Amount"
+                          variant="outlined"
+                          value={bonusAmount !== 0 ? bonusAmount : ""}
+                          onChange={this.handleBonusAmountChange}
+                          fullWidth
+                          type="number"
+                          aria-label="Annual Bonus Amount Input"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                LKR
+                              </InputAdornment>
+                            ),
+                          }}
+                          helperText="Enter your annual bonus amount"
+                        />
+                      </Grid>
+                    </Grid>
+                  )}
+                  
+                  {bonusTaxCalculation && (
+                    <Grid item xs={12} sx={{ mt: 2 }}>
+                      <Paper sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                          Bonus Tax Calculation (Cumulative Method)
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Total Annual Income: Rs.{bonusTaxCalculation.totalAnnualIncome.toLocaleString()}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Total Annual Tax: Rs.{bonusTaxCalculation.totalAnnualTax.toLocaleString()}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Annual Tax on Salary Only: Rs.{bonusTaxCalculation.salaryOnlyTax.toLocaleString()}
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                          Tax on Bonus: Rs.{bonusTaxCalculation.bonusTax.toLocaleString()}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                          Effective Tax Rate on Bonus: {bonusTaxCalculation.effectiveTaxRate}%
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  )}
                 </Paper>
               </Grid>
-            )}
 
-            {/* Beta Bonus Calculation Feature */}
-            <Grid item xs={12}>
-              <Paper sx={{ p: 2, mb: 2, backgroundColor: '#fff3e0', border: '1px solid #ff9800' }}>
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                  <Typography variant="body2">
-                    <strong>Beta Feature:</strong> Bonus tax calculations are experimental and may not be 100% accurate. 
-                    This feature provides a rough estimate for planning purposes only.
-                  </Typography>
-                </Alert>
-                
-                <FormControlLabel
-                  control={
-                    <Checkbox 
-                      checked={isBonusEnabled} 
-                      onChange={(e) => this.handleBonusToggle(e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label="Enable Bonus Tax Calculation (Beta)"
-                />
-                
-                {isBonusEnabled && (
-                  <Grid container spacing={2} sx={{ mt: 1 }}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        id="bonus-amount-input"
-                        label="Annual Bonus Amount"
-                        variant="outlined"
-                        value={bonusAmount !== 0 ? bonusAmount : ""}
-                        onChange={this.handleBonusAmountChange}
-                        fullWidth
-                        type="number"
-                        aria-label="Annual Bonus Amount Input"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              LKR
-                            </InputAdornment>
-                          ),
-                        }}
-                        helperText="Enter your annual bonus amount (no EPF deduction applies)"
-                      />
-                    </Grid>
-                  </Grid>
-                )}
-                
-                {bonusTaxCalculation && (
-                  <Grid item xs={12} sx={{ mt: 2 }}>
-                    <Paper sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
-                      <Typography variant="h6" sx={{ mb: 2 }}>
-                        Bonus Tax Calculation (Cumulative Method)
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        Total Annual Income: Rs.{bonusTaxCalculation.totalAnnualIncome.toLocaleString()}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        Total Annual Tax: Rs.{bonusTaxCalculation.totalAnnualTax.toLocaleString()}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        Annual Tax on Salary Only: Rs.{bonusTaxCalculation.salaryOnlyTax.toLocaleString()}
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                        Tax on Bonus: Rs.{bonusTaxCalculation.bonusTax.toLocaleString()}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-                        Effective Tax Rate on Bonus: {bonusTaxCalculation.effectiveTaxRate}%
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                )}
-              </Paper>
-            </Grid>
+              {/* Custom Tax Table */}
+              {customTax.length > 0 && (
+                <Grid item xs={12}>
+                  <CustomTaxTable customTax={customTax} onDelete={this.handleDelete} />
+                </Grid>
+              )}
 
-            {customTax.length > 0 && (
-              <Grid item xs={12} mb={3}>
-                <CustomTaxTable customTax={customTax} onDelete={this.handleDelete} />
+              {/* Tax Breakdown Table */}
+              {totalMonthlyIncome > 150000 && (
+                <Grid item xs={12}>
+                  <TaxBreakdownTable 
+                    oldTax={oldTax} 
+                    newTax={tax} 
+                    isForeignRemittance={isForeignRemittance}
+                  />
+                </Grid>
+              )}
+
+              {/* Tax Output for Regular Income */}
+              {totalMonthlyIncome > 100000 && !isForeignRemittance && (
+                <Grid item xs={12}>
+                  <TaxOutput 
+                    tax={tax}
+                    oldTax={oldTax}
+                    otherTax={otherTax}
+                    totalMonthlyIncome={totalMonthlyIncome}
+                    otherIncome={otherIncome}
+                  />
+                </Grid>
+              )}
+
+              {/* Tax Information */}
+              <Grid item xs={12}>
+                <section aria-label="Tax Information">
+                  <Description />
+                </section>
               </Grid>
-            )}
 
-            {totalMonthlyIncome > 150000 && (
-              <Grid item xs={12} mb={3}>
-                <TaxBreakdownTable 
-                  oldTax={oldTax} 
-                  newTax={tax} 
-                  isForeignRemittance={isForeignRemittance}
-                />
+              {/* Additional Tax Input */}
+              <Grid item xs={12}>
+                <section aria-label="Additional Tax Input">
+                  <CustomTaxInput addtionaltax={this.createAdditonTax} />
+                </section>
               </Grid>
-            )}
 
-            {/* Only show TaxOutput for regular income, not for foreign remittance */}
-            {totalMonthlyIncome > 100000 && !isForeignRemittance && (
-              <Grid item xs={12} mb={3}>
-                <TaxOutput 
-                  tax={tax}
-                  oldTax={oldTax}
-                  otherTax={otherTax}
-                  totalMonthlyIncome={totalMonthlyIncome}
-                  otherIncome={otherIncome}
-                />
+              {/* Social Media */}
+              <Grid item xs={12}>
+                <footer>
+                  <SocialMedia />
+                </footer>
               </Grid>
-            )}
-
-            <Grid item xs={12} mb={3}>
-              <section aria-label="Tax Information">
-                <Description />
-              </section>
+              
             </Grid>
-
-            <Grid item xs={12} mb={3}>
-              <section aria-label="Additional Tax Input">
-                <CustomTaxInput addtionaltax={this.createAdditonTax} />
-              </section>
-            </Grid>
-
-            <Grid item xs={12}>
-              <footer>
-                <SocialMedia />
-              </footer>
-            </Grid>
-          </Grid>
+          </Container>
         </Box>
-      </>
+      </ThemeProvider>
     );
   }
 
