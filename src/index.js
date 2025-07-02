@@ -1,8 +1,11 @@
 import { StrictMode } from "react";
 import ReactDOM from "react-dom";
-
-import App from "./App";
+import { lazy, Suspense } from 'react';
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import CircularProgress from "@mui/material/CircularProgress";
+
+// Use lazy loading for the main App component
+const App = lazy(() => import("./App"));
 
 const theme = createTheme({
   palette: {
@@ -34,7 +37,13 @@ const rootElement = document.getElementById("root");
 ReactDOM.render(
   <ThemeProvider theme={theme}>
     <StrictMode>
-      <App />
+      <Suspense fallback={
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <CircularProgress />
+        </div>
+      }>
+        <App />
+      </Suspense>
     </StrictMode>
   </ThemeProvider>,
   rootElement

@@ -1,6 +1,17 @@
+// Use memoization for tax calculations to improve performance
+const taxCalculationCache = new Map();
+
 export const calculateOldTax = (amount, threshold) => {
+  // Check if calculation already exists in cache
+  const cacheKey = `old_${amount}_${threshold}`;
+  if (taxCalculationCache.has(cacheKey)) {
+    return taxCalculationCache.get(cacheKey);
+  }
+  
   if (amount <= threshold) {
-    return { total: 0, details: [] };
+    const result = { total: 0, details: [] };
+    taxCalculationCache.set(cacheKey, result);
+    return result;
   }
 
   let details = [{ tax: 0, from: 0, to: threshold }];
@@ -50,20 +61,31 @@ export const calculateOldTax = (amount, threshold) => {
     }
   }
 
-  return {
+  const result = {
     total: Math.round(taxableAmount),
     details
   };
+  
+  // Store the result in the cache
+  taxCalculationCache.set(cacheKey, result);
+  
+  return result;
 };
 
 // Update the new tax calculation based on the official amendment from March 20, 2025
 export const calculateNewTax = (amount, threshold = 150000) => {
+  // Check if calculation already exists in cache
+  const cacheKey = `new_${amount}_${threshold}`;
+  if (taxCalculationCache.has(cacheKey)) {
+    return taxCalculationCache.get(cacheKey);
+  }
+  
   // Convert monthly amount to annual
   const annualAmount = amount * 12;
   
   // New tax-free threshold is Rs. 1,800,000
   if (annualAmount <= 1800000) {
-    return { 
+    const result = { 
       total: 0, 
       details: [{
         tax: 0,
@@ -179,22 +201,33 @@ export const calculateNewTax = (amount, threshold = 150000) => {
   // Calculate monthly tax
   const monthlyTax = totalTax / 12;
   
-  return {
+  const result = {
     total: Math.round(monthlyTax),
     details,
     annual: Math.round(totalTax),
     taxFreeAmount: 1800000
   };
+  
+  // Store result in cache
+  taxCalculationCache.set(cacheKey, result);
+  
+  return result;
 };
 
 // Add new function for foreign remittance tax calculation
 export const calculateForeignRemittanceTax = (amount, threshold = 150000) => {
+  // Check if calculation already exists in cache
+  const cacheKey = `foreign_${amount}_${threshold}`;
+  if (taxCalculationCache.has(cacheKey)) {
+    return taxCalculationCache.get(cacheKey);
+  }
+  
   // Convert monthly amount to annual
   const annualAmount = amount * 12;
   
   // Tax-free threshold is Rs. 1,800,000 (same as regular tax)
   if (annualAmount <= 1800000) {
-    return { 
+    const result = { 
       total: 0, 
       details: [{
         tax: 0,
@@ -256,17 +289,28 @@ export const calculateForeignRemittanceTax = (amount, threshold = 150000) => {
   // Calculate monthly tax
   const monthlyTax = totalTax / 12;
   
-  return {
+  const result = {
     total: Math.round(monthlyTax),
     details,
     annual: Math.round(totalTax),
     taxFreeAmount: 1800000,
     isForeignRemittance: true
   };
+  
+  // Store result in cache
+  taxCalculationCache.set(cacheKey, result);
+  
+  return result;
 };
 
 // Add new function for bonus tax calculation using cumulative method
 export const calculateBonusTax = (monthlySalary, bonusAmount, isForeignRemittance = false) => {
+  // Check if calculation already exists in cache
+  const cacheKey = `bonus_${monthlySalary}_${bonusAmount}_${isForeignRemittance}`;
+  if (taxCalculationCache.has(cacheKey)) {
+    return taxCalculationCache.get(cacheKey);
+  }
+  
   // Calculate annual salary
   const annualSalary = monthlySalary * 12;
   
@@ -299,7 +343,7 @@ export const calculateBonusTax = (monthlySalary, bonusAmount, isForeignRemittanc
   // Calculate effective tax rate on bonus
   const effectiveTaxRate = bonusAmount > 0 ? (bonusTax / bonusAmount) * 100 : 0;
   
-  return {
+  const result = {
     bonusTax: Math.round(bonusTax),
     totalAnnualIncome,
     totalAnnualTax: Math.round(totalAnnualTax),
@@ -307,4 +351,9 @@ export const calculateBonusTax = (monthlySalary, bonusAmount, isForeignRemittanc
     effectiveTaxRate: Math.round(effectiveTaxRate * 100) / 100,
     bonusAmount
   };
+  
+  // Store result in cache
+  taxCalculationCache.set(cacheKey, result);
+  
+  return result;
 };

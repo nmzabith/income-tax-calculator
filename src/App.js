@@ -2,33 +2,28 @@ import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import { Typography, Container, ThemeProvider } from "@mui/material";
 import { Alert, Checkbox, FormControlLabel } from "@mui/material";
-import {} from "bootstrap";
-import CustomTaxInput from "./components/customTaxComponent";
-import CustomTaxTable from "./components/CustomTaxTable";
-import Description from "./components/descriptions";
-import SocialMedia from "./components/socialIcons";
-import React, { Component } from 'react';
+import React, { Component, lazy, Suspense } from 'react';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { calculateNewTax, calculateOldTax, calculateForeignRemittanceTax, calculateBonusTax } from './utils/taxCalculations';
 import { getUsdToLkrRate, convertUsdToLkr } from './services/currencyService';
-import TaxTypeToggle from './components/TaxTypeToggle';
-import CurrencyToggle from './components/CurrencyToggle';
 import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
-import TaxBreakdownTable from './components/TaxBreakdownTable';
-import TaxOutput from './components/TaxOutput';
 import Helmet from 'react-helmet';
 import Header from './components/Header';
 import InputCard from './components/InputCard';
 import theme from './theme/theme';
+
+// Lazily load non-critical components
+const TaxTypeToggle = lazy(() => import('./components/TaxTypeToggle'));
+const CurrencyToggle = lazy(() => import('./components/CurrencyToggle'));
+const TaxBreakdownTable = lazy(() => import('./components/TaxBreakdownTable'));
+const TaxOutput = lazy(() => import('./components/TaxOutput'));
+const CustomTaxInput = lazy(() => import("./components/customTaxComponent"));
+const CustomTaxTable = lazy(() => import("./components/CustomTaxTable"));
+const Description = lazy(() => import("./components/descriptions"));
+const SocialMedia = lazy(() => import("./components/socialIcons"));
 
 class App extends Component {
   state = {  
@@ -285,6 +280,9 @@ class App extends Component {
         <Helmet>
           <title>Sri Lanka Income Tax Calculator 2024/2025 | PAYE Tax Online Tool</title>
           <meta name="description" content="Calculate your income tax in Sri Lanka for 2024/2025 with our free PAYE tax calculator. Supports foreign remittance and latest tax amendments." />
+          {/* Add preconnect links for faster loading */}
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         </Helmet>
         
         <Box sx={{ 
@@ -298,20 +296,24 @@ class App extends Component {
               
               {/* Tax Type Toggle */}
               <Grid item xs={12}>
-                <TaxTypeToggle 
-                  isForeignRemittance={isForeignRemittance} 
-                  onTaxTypeChange={this.handleTaxTypeChange} 
-                />
+                <Suspense fallback={<Paper sx={{ p: 2, textAlign: 'center' }}><CircularProgress size={24} /></Paper>}>
+                  <TaxTypeToggle 
+                    isForeignRemittance={isForeignRemittance} 
+                    onTaxTypeChange={this.handleTaxTypeChange} 
+                  />
+                </Suspense>
               </Grid>
               
               {/* Currency Toggle for Foreign Remittance */}
               {isForeignRemittance && (
                 <Grid item xs={12}>
-                  <CurrencyToggle 
-                    currency={currency} 
-                    exchangeRate={exchangeRate} 
-                    onCurrencyChange={this.handleCurrencyChange} 
-                  />
+                  <Suspense fallback={<Paper sx={{ p: 2, textAlign: 'center' }}><CircularProgress size={24} /></Paper>}>
+                    <CurrencyToggle 
+                      currency={currency} 
+                      exchangeRate={exchangeRate} 
+                      onCurrencyChange={this.handleCurrencyChange} 
+                    />
+                  </Suspense>
                 </Grid>
               )}
               
@@ -404,52 +406,64 @@ class App extends Component {
               {/* Custom Tax Table */}
               {customTax.length > 0 && (
                 <Grid item xs={12}>
-                  <CustomTaxTable customTax={customTax} onDelete={this.handleDelete} />
+                  <Suspense fallback={<Paper sx={{ p: 2, textAlign: 'center' }}><CircularProgress size={24} /></Paper>}>
+                    <CustomTaxTable customTax={customTax} onDelete={this.handleDelete} />
+                  </Suspense>
                 </Grid>
               )}
 
               {/* Tax Breakdown Table */}
               {totalMonthlyIncome > 150000 && (
                 <Grid item xs={12}>
-                  <TaxBreakdownTable 
-                    oldTax={oldTax} 
-                    newTax={tax} 
-                    isForeignRemittance={isForeignRemittance}
-                  />
+                  <Suspense fallback={<Paper sx={{ p: 2, textAlign: 'center' }}><CircularProgress size={24} /></Paper>}>
+                    <TaxBreakdownTable 
+                      oldTax={oldTax} 
+                      newTax={tax} 
+                      isForeignRemittance={isForeignRemittance}
+                    />
+                  </Suspense>
                 </Grid>
               )}
 
               {/* Tax Output for Regular Income */}
               {totalMonthlyIncome > 100000 && !isForeignRemittance && (
                 <Grid item xs={12}>
-                  <TaxOutput 
-                    tax={tax}
-                    oldTax={oldTax}
-                    otherTax={otherTax}
-                    totalMonthlyIncome={totalMonthlyIncome}
-                    otherIncome={otherIncome}
-                  />
+                  <Suspense fallback={<Paper sx={{ p: 2, textAlign: 'center' }}><CircularProgress size={24} /></Paper>}>
+                    <TaxOutput 
+                      tax={tax}
+                      oldTax={oldTax}
+                      otherTax={otherTax}
+                      totalMonthlyIncome={totalMonthlyIncome}
+                      otherIncome={otherIncome}
+                    />
+                  </Suspense>
                 </Grid>
               )}
 
               {/* Tax Information */}
               <Grid item xs={12}>
                 <section aria-label="Tax Information">
-                  <Description />
+                  <Suspense fallback={<Paper sx={{ p: 2, textAlign: 'center' }}><CircularProgress size={24} /></Paper>}>
+                    <Description />
+                  </Suspense>
                 </section>
               </Grid>
 
               {/* Additional Tax Input */}
               <Grid item xs={12}>
                 <section aria-label="Additional Tax Input">
-                  <CustomTaxInput addtionaltax={this.createAdditonTax} />
+                  <Suspense fallback={<Paper sx={{ p: 2, textAlign: 'center' }}><CircularProgress size={24} /></Paper>}>
+                    <CustomTaxInput addtionaltax={this.createAdditonTax} />
+                  </Suspense>
                 </section>
               </Grid>
 
               {/* Social Media */}
               <Grid item xs={12}>
                 <footer>
-                  <SocialMedia />
+                  <Suspense fallback={<div style={{ textAlign: 'center', padding: '10px' }}><CircularProgress size={20} /></div>}>
+                    <SocialMedia />
+                  </Suspense>
                 </footer>
               </Grid>
               
