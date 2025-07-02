@@ -264,3 +264,47 @@ export const calculateForeignRemittanceTax = (amount, threshold = 150000) => {
     isForeignRemittance: true
   };
 };
+
+// Add new function for bonus tax calculation using cumulative method
+export const calculateBonusTax = (monthlySalary, bonusAmount, isForeignRemittance = false) => {
+  // Calculate annual salary
+  const annualSalary = monthlySalary * 12;
+  
+  // Calculate total annual income (salary + bonus)
+  const totalAnnualIncome = annualSalary + bonusAmount;
+  
+  // Calculate tax on total annual income
+  let totalAnnualTax;
+  if (isForeignRemittance) {
+    const result = calculateForeignRemittanceTax(totalAnnualIncome / 12, 150000);
+    totalAnnualTax = result.annual;
+  } else {
+    const result = calculateNewTax(totalAnnualIncome / 12, 150000);
+    totalAnnualTax = result.annual;
+  }
+  
+  // Calculate tax on salary only
+  let salaryOnlyTax;
+  if (isForeignRemittance) {
+    const result = calculateForeignRemittanceTax(monthlySalary, 150000);
+    salaryOnlyTax = result.annual;
+  } else {
+    const result = calculateNewTax(monthlySalary, 150000);
+    salaryOnlyTax = result.annual;
+  }
+  
+  // Tax on bonus is the difference
+  const bonusTax = totalAnnualTax - salaryOnlyTax;
+  
+  // Calculate effective tax rate on bonus
+  const effectiveTaxRate = bonusAmount > 0 ? (bonusTax / bonusAmount) * 100 : 0;
+  
+  return {
+    bonusTax: Math.round(bonusTax),
+    totalAnnualIncome,
+    totalAnnualTax: Math.round(totalAnnualTax),
+    salaryOnlyTax: Math.round(salaryOnlyTax),
+    effectiveTaxRate: Math.round(effectiveTaxRate * 100) / 100,
+    bonusAmount
+  };
+};

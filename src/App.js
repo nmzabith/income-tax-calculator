@@ -9,13 +9,15 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { Typography } from "@mui/material";
+import { Alert, Checkbox, FormControlLabel } from "@mui/material";
 import {} from "bootstrap";
 import CustomTaxInput from "./components/customTaxComponent";
+import CustomTaxTable from "./components/CustomTaxTable";
 import Description from "./components/descriptions";
 import SocialMedia from "./components/socialIcons";
 import React, { Component } from 'react';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { calculateNewTax, calculateOldTax, calculateForeignRemittanceTax } from './utils/taxCalculations';
+import { calculateNewTax, calculateOldTax, calculateForeignRemittanceTax, calculateBonusTax } from './utils/taxCalculations';
 import { getUsdToLkrRate, convertUsdToLkr } from './services/currencyService';
 import TaxTypeToggle from './components/TaxTypeToggle';
 import CurrencyToggle from './components/CurrencyToggle';
@@ -35,7 +37,11 @@ class App extends Component {
     isForeignRemittance: false,
     currency: 'LKR',
     exchangeRate: null,
-    isLoading: false
+    isLoading: false,
+    // Beta bonus functionality
+    isBonusEnabled: false,
+    bonusAmount: 0,
+    bonusTaxCalculation: null
   }
 
   componentDidMount() {
@@ -166,7 +172,7 @@ class App extends Component {
   };
 
   calculate = () => {
-    const { income, customTax, isForeignRemittance, currency } = this.state;
+    const { income, customTax, isForeignRemittance, currency, isBonusEnabled, bonusAmount } = this.state;
     const { totalOtherIncome, totalTax } = this.calculateCustomTax(customTax);
     
     // Use the converted amount for calculations if currency is USD
@@ -187,6 +193,11 @@ class App extends Component {
       totalMonthlyIncome: amount,
       otherTax: totalTax,
       otherIncome: totalOtherIncome
+    }, () => {
+      // Calculate bonus tax if enabled
+      if (isBonusEnabled && bonusAmount > 0) {
+        this.calculateBonusTax();
+      }
     });
   };
 
@@ -210,6 +221,44 @@ class App extends Component {
     })
   }
 
+  handleBonusToggle = (enabled) => {
+    this.setState({ 
+      isBonusEnabled: enabled,
+      bonusAmount: enabled ? this.state.bonusAmount : 0,
+      bonusTaxCalculation: enabled ? this.state.bonusTaxCalculation : null
+    }, () => {
+      if (enabled && this.state.bonusAmount > 0) {
+        this.calculateBonusTax();
+      }
+    });
+  };
+
+  handleBonusAmountChange = (event) => {
+    const amount = Number(event.target.value);
+    this.setState({ bonusAmount: amount }, () => {
+      if (this.state.isBonusEnabled && amount > 0 && this.state.income.monthly > 0) {
+        this.calculateBonusTax();
+      }
+    });
+  };
+
+  calculateBonusTax = () => {
+    const { income, bonusAmount, isForeignRemittance, currency } = this.state;
+    
+    if (!bonusAmount || bonusAmount <= 0 || !income.monthly || income.monthly <= 0) {
+      this.setState({ bonusTaxCalculation: null });
+      return;
+    }
+
+    // Use the converted amount for calculations if currency is USD
+    const monthlySalary = currency === 'USD' ? 
+      (income.convertedMonthly || 0) : 
+      Number(income.monthly);
+
+    const bonusTaxResult = calculateBonusTax(monthlySalary, bonusAmount, isForeignRemittance);
+    this.setState({ bonusTaxCalculation: bonusTaxResult });
+  };
+
   render(){
     const {
       income, 
@@ -222,7 +271,10 @@ class App extends Component {
       isForeignRemittance,
       currency,
       exchangeRate,
-      isLoading
+      isLoading,
+      isBonusEnabled,
+      bonusAmount,
+      bonusTaxCalculation
     } = this.state;
 
     return (
@@ -320,6 +372,79 @@ class App extends Component {
                 </Paper>
               </Grid>
             )}
+
+            {/* Beta Bonus Calculation Feature */}
+            <Grid item xs={12}>
+              <Paper sx={{ p: 2, mb: 2, backgroundColor: '#fff3e0', border: '1px solid #ff9800' }}>
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  <Typography variant="body2">
+                    <strong>Beta Feature:</strong> Bonus tax calculations are experimental and may not be 100% accurate. 
+                    This feature provides a rough estimate for planning purposes only.
+                  </Typography>
+                </Alert>
+                
+                <FormControlLabel
+                  control={
+                    <Checkbox 
+                      checked={isBonusEnabled} 
+                      onChange={(e) => this.handleBonusToggle(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label="Enable Bonus Tax Calculation (Beta)"
+                />
+                
+                {isBonusEnabled && (
+                  <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        id="bonus-amount-input"
+                        label="Annual Bonus Amount"
+                        variant="outlined"
+                        value={bonusAmount !== 0 ? bonusAmount : ""}
+                        onChange={this.handleBonusAmountChange}
+                        fullWidth
+                        type="number"
+                        aria-label="Annual Bonus Amount Input"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              LKR
+                            </InputAdornment>
+                          ),
+                        }}
+                        helperText="Enter your annual bonus amount (no EPF deduction applies)"
+                      />
+                    </Grid>
+                  </Grid>
+                )}
+                
+                {bonusTaxCalculation && (
+                  <Grid item xs={12} sx={{ mt: 2 }}>
+                    <Paper sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
+                      <Typography variant="h6" sx={{ mb: 2 }}>
+                        Bonus Tax Calculation (Cumulative Method)
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        Total Annual Income: Rs.{bonusTaxCalculation.totalAnnualIncome.toLocaleString()}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        Total Annual Tax: Rs.{bonusTaxCalculation.totalAnnualTax.toLocaleString()}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        Annual Tax on Salary Only: Rs.{bonusTaxCalculation.salaryOnlyTax.toLocaleString()}
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                        Tax on Bonus: Rs.{bonusTaxCalculation.bonusTax.toLocaleString()}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                        Effective Tax Rate on Bonus: {bonusTaxCalculation.effectiveTaxRate}%
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                )}
+              </Paper>
+            </Grid>
 
             {customTax.length > 0 && (
               <Grid item xs={12} mb={3}>
