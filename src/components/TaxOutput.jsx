@@ -24,11 +24,23 @@ const TaxOutput = ({
   otherTax,
   totalMonthlyIncome,
   otherIncome,
+  isProposedTax = false,
+  current2025Tax = null,
 }) => {
+  const isProposed = Boolean(isProposedTax || tax.isProposed);
+  const effectiveThreshold = isProposed ? 162500 : 150000;
+
+  // Comparison metrics
+  const baselineTaxTotal = (isProposed && current2025Tax) ? current2025Tax.total : oldTax.total;
   const taxDifference = Math.floor(oldTax.total - tax.total);
-  const taxReductionPercentage = ((taxDifference / oldTax.total) * 100).toFixed(
-    2
-  );
+  const additionalReliefFrom2025 = (isProposed && current2025Tax) 
+    ? Math.max(0, Math.floor(current2025Tax.total - tax.total)) 
+    : 0;
+  
+  const taxReductionPercentage = oldTax.total > 0
+    ? ((taxDifference / oldTax.total) * 100).toFixed(2)
+    : "100.00";
+    
   const epfDeduction = totalMonthlyIncome * 0.08;
   const totalAfterTax =
     Number(totalMonthlyIncome) +
@@ -36,7 +48,7 @@ const TaxOutput = ({
     Number(Math.floor(tax.total + otherTax));
   const incomeAfterTaxAndEpf = totalAfterTax - epfDeduction;
 
-  if (totalMonthlyIncome <= 150000) {
+  if (totalMonthlyIncome <= effectiveThreshold || tax.total === 0) {
     return (
       <Card
         elevation={0}
@@ -75,7 +87,7 @@ const TaxOutput = ({
               component="h2"
               sx={{ fontWeight: 600, color: "text.primary" }}
             >
-              Tax Calculation Results
+              Tax Calculation Results {isProposed ? "(Budget 2027 Proposed Relief)" : ""}
             </Typography>
           </Box>
 
@@ -101,7 +113,7 @@ const TaxOutput = ({
                   රු {totalMonthlyIncome.toLocaleString()}
                 </Typography>
                 <Chip
-                  label="Tax Free Zone"
+                  label={isProposed ? "Tax Free Zone (Under Rs. 162,500/mo)" : "Tax Free Zone (Under Rs. 150,000/mo)"}
                   size="small"
                   color="success"
                   sx={{ mt: 1 }}
@@ -138,6 +150,23 @@ const TaxOutput = ({
                 />
               </Box>
             </Grid>
+
+            {isProposed && current2025Tax && current2025Tax.total > 0 && (
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    p: 2,
+                    backgroundColor: "rgba(16, 185, 129, 0.08)",
+                    borderRadius: 2,
+                    border: "1px solid rgba(16, 185, 129, 0.2)",
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: "#065f46", fontWeight: 600 }}>
+                    ✨ Under current 2025 law you would pay <strong>රු {current2025Tax.total.toLocaleString()}</strong>/month. Under the new Budget 2027 proposal you pay <strong>රු 0</strong> (Monthly saving of <strong>රු {current2025Tax.total.toLocaleString()}</strong>).
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
 
             <Grid item xs={12}>
               <Divider sx={{ my: 2 }} />
@@ -196,21 +225,32 @@ const TaxOutput = ({
       }}
     >
       <CardContent sx={{ p: 4 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-          <BarChart3 size={28} style={{ color: "#4f46e5", marginRight: 16 }} />
-          <Typography
-            variant="h5"
-            component="h2"
-            sx={{ fontWeight: 600, color: "text.primary" }}
-          >
-            Tax Comparison Results
-          </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3, flexWrap: "wrap", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <BarChart3 size={28} style={{ color: "#4f46e5", marginRight: 16 }} />
+            <Typography
+              variant="h5"
+              component="h2"
+              sx={{ fontWeight: 600, color: "text.primary" }}
+            >
+              {isProposed ? "Tax Comparison: Budget 2027 Proposed Relief" : "Tax Comparison Results"}
+            </Typography>
+          </Box>
+          {isProposed && (
+            <Chip
+              icon={<Sparkles size={16} />}
+              label="Proposed 2027 Rates Active"
+              color="success"
+              variant="filled"
+              sx={{ fontWeight: 600 }}
+            />
+          )}
         </Box>
 
         <Divider sx={{ mb: 3, opacity: 0.3 }} />
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={isProposed && current2025Tax ? 4 : 6}>
             <Box
               sx={{
                 p: 3,
@@ -240,7 +280,39 @@ const TaxOutput = ({
             </Box>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          {isProposed && current2025Tax && (
+            <Grid item xs={12} md={4}>
+              <Box
+                sx={{
+                  p: 3,
+                  backgroundColor: "rgba(255, 152, 0, 0.05)",
+                  borderRadius: 2,
+                  border: "1px solid rgba(255, 152, 0, 0.2)",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                  <BarChart3
+                    size={20}
+                    style={{ color: "#f57c00", marginRight: 8 }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 500, color: "#e65100" }}
+                  >
+                    Current Tax (150k threshold)
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: 600, color: "#e65100" }}
+                >
+                  රු {Math.floor(current2025Tax.total + otherTax).toLocaleString()}
+                </Typography>
+              </Box>
+            </Grid>
+          )}
+
+          <Grid item xs={12} md={isProposed && current2025Tax ? 4 : 6}>
             <Box
               sx={{
                 p: 3,
@@ -258,7 +330,7 @@ const TaxOutput = ({
                   variant="body2"
                   sx={{ fontWeight: 500, color: "success.main" }}
                 >
-                  New Tax (150k threshold)
+                  {isProposed ? "Proposed Tax (162.5k threshold)" : "New Tax (150k threshold)"}
                 </Typography>
               </Box>
               <Typography
@@ -274,9 +346,9 @@ const TaxOutput = ({
             <Box
               sx={{
                 p: 3,
-                backgroundColor: "rgba(33, 150, 243, 0.05)",
+                backgroundColor: isProposed ? "rgba(16, 185, 129, 0.06)" : "rgba(33, 150, 243, 0.05)",
                 borderRadius: 2,
-                border: "1px solid rgba(33, 150, 243, 0.1)",
+                border: isProposed ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid rgba(33, 150, 243, 0.1)",
                 textAlign: "center",
               }}
             >
@@ -290,24 +362,28 @@ const TaxOutput = ({
               >
                 <TrendingDown
                   size={24}
-                  style={{ color: "#3b82f6", marginRight: 8 }}
+                  style={{ color: isProposed ? "#059669" : "#3b82f6", marginRight: 8 }}
                 />
                 <Typography
                   variant="h6"
-                  sx={{ fontWeight: 600, color: "info.main" }}
+                  sx={{ fontWeight: 600, color: isProposed ? "success.dark" : "info.main" }}
                 >
-                  Tax Savings
+                  {isProposed ? "Monthly Tax Savings (vs. Current 2025 Law)" : "Tax Savings"}
                 </Typography>
               </Box>
+              
               <Typography
                 variant="h4"
-                sx={{ fontWeight: 700, color: "info.main", mb: 1 }}
+                sx={{ fontWeight: 700, color: isProposed ? "success.main" : "info.main", mb: 1 }}
               >
-                රු {taxDifference.toLocaleString()}
+                රු {isProposed ? additionalReliefFrom2025.toLocaleString() : taxDifference.toLocaleString()}
               </Typography>
+
               <Chip
-                label={`${taxReductionPercentage}% Reduction`}
-                color="info"
+                label={isProposed 
+                  ? `Additional Rs. ${additionalReliefFrom2025.toLocaleString()} Relief/mo (Total Rs. ${taxDifference.toLocaleString()} vs Pre-2025)` 
+                  : `${taxReductionPercentage}% Reduction`}
+                color={isProposed ? "success" : "info"}
                 size="large"
                 sx={{ fontWeight: 600 }}
               />

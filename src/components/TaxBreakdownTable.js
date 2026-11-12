@@ -8,7 +8,8 @@ import {
   TableContainer, 
   TableHead, 
   TableRow,
-  Box
+  Box,
+  Chip
 } from '@mui/material';
 
 function TaxBreakdownTable({ oldTax, newTax, isForeignRemittance }) {
@@ -17,6 +18,7 @@ function TaxBreakdownTable({ oldTax, newTax, isForeignRemittance }) {
   const oldEffectiveRate = oldTax.total ? ((oldTax.total * 12 / annualIncome) * 100).toFixed(2) : 0;
   const newEffectiveRate = newTax.total ? ((newTax.total * 12 / annualIncome) * 100).toFixed(2) : 0;
   const rateDifference = (newEffectiveRate - oldEffectiveRate).toFixed(2);
+  const isProposed = Boolean(newTax.isProposed);
   
   // Determine colors for difference values
   const getColorForDifference = (diff) => {
@@ -44,6 +46,8 @@ function TaxBreakdownTable({ oldTax, newTax, isForeignRemittance }) {
     switch (rate) {
       case 0: return '#e0f2f1'; // Very light teal for tax-free
       case 6: return '#e3f2fd'; // Very light blue
+      case 12: return '#e0f7fa'; // Very light cyan for new 12% bracket
+      case 15: return '#e8f5e9'; // Very light green for foreign remittance
       case 18: return '#e8f5e9'; // Very light green
       case 24: return '#fff3e0'; // Very light orange
       case 30: return '#ffebee'; // Very light red
@@ -52,46 +56,46 @@ function TaxBreakdownTable({ oldTax, newTax, isForeignRemittance }) {
     }
   };
 
-  // Helper function to format exact monthly values
-  const formatExactMonthlyValue = (annualValue) => {
-    // Convert annual to monthly with 2 decimal precision for accuracy
-    const monthlyValue = annualValue / 12;
-    return Math.round(monthlyValue * 100) / 100;
-  };
-
-  // Helper function to format currency with commas
-  const formatCurrency = (amount) => {
-    return amount.toLocaleString(undefined, { 
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2
-    });
-  };
-
   // Helper function to get precise monthly bracket description
   const getMonthlyBracketDescription = (detail) => {
-    if (detail.rate === 0) {
-      return "Rs. 0 - Rs. 150,000"; // Tax-free threshold
+    if (isProposed) {
+      if (detail.rate === 0) {
+        return "Rs. 0 - Rs. 162,500.00"; // Proposed tax-free threshold
+      }
+      if (detail.description) {
+        if (detail.description.includes("First Rs. 850,000")) {
+          return "Rs. 162,500.01 - Rs. 233,333.33";
+        } else if (detail.description.includes("12%")) {
+          return "Rs. 233,333.34 - Rs. 283,333.33";
+        } else if (detail.description.includes("18%")) {
+          return "Rs. 283,333.34 - Rs. 333,333.33";
+        } else if (detail.description.includes("24%")) {
+          return "Rs. 333,333.34 - Rs. 383,333.33";
+        } else if (detail.description.includes("30%")) {
+          return "Rs. 383,333.34 - Rs. 433,333.33";
+        } else if (detail.description.includes("36%")) {
+          return "Above Rs. 433,333.33";
+        }
+      }
+    } else {
+      if (detail.rate === 0) {
+        return "Rs. 0 - Rs. 150,000.00"; // Current tax-free threshold
+      }
+      if (detail.description) {
+        if (detail.description.includes("Up to Rs. 1,000,000")) {
+          return "Rs. 150,000.01 - Rs. 233,333.33";
+        } else if (detail.description.includes("1,000,001 to Rs. 1,500,000")) {
+          return "Rs. 233,333.34 - Rs. 291,666.67";
+        } else if (detail.description.includes("1,500,001 to Rs. 2,000,000")) {
+          return "Rs. 291,666.68 - Rs. 333,333.33";
+        } else if (detail.description.includes("2,000,001 to Rs. 2,500,000")) {
+          return "Rs. 333,333.34 - Rs. 375,000.00";
+        } else if (detail.description.includes("Over Rs. 2,500,000")) {
+          return "Above Rs. 375,000.00";
+        }
+      }
     }
-    
-    // Determine bracket descriptions with precise monthly values based on where they fall in the tax structure
-    if (detail.description) {
-      if (detail.description.includes("Up to Rs. 1,000,000")) {
-        return "Rs. 150,000.01 - Rs. 233,333.33";  // First taxable bracket after tax-free
-      } 
-      else if (detail.description.includes("1,000,001 to Rs. 1,500,000")) {
-        return "Rs. 233,333.34 - Rs. 291,666.67";  // Second bracket
-      }
-      else if (detail.description.includes("1,500,001 to Rs. 2,000,000")) {
-        return "Rs. 291,666.68 - Rs. 333,333.33";  // Third bracket
-      }
-      else if (detail.description.includes("2,000,001 to Rs. 2,500,000")) {
-        return "Rs. 333,333.34 - Rs. 375,000.00";  // Fourth bracket
-      }
-      else if (detail.description.includes("Over Rs. 2,500,000")) {
-        return "Above Rs. 375,000.00";  // Top bracket
-      }
-    }
-    
+
     // For custom ranges, calculate from the actual values
     const monthlyFrom = (detail.from / 12).toLocaleString(undefined, {
       minimumFractionDigits: 2,
@@ -108,19 +112,22 @@ function TaxBreakdownTable({ oldTax, newTax, isForeignRemittance }) {
 
   // Helper function to get precise monthly bracket description for foreign remittance
   const getForeignRemittanceBracketDescription = (detail) => {
+    const thresholdDesc = isProposed ? "Rs. 0 - Rs. 162,500.00" : "Rs. 0 - Rs. 150,000.00";
+    const bracket1Desc = isProposed ? "Rs. 162,500.01 - Rs. 233,333.33" : "Rs. 150,000.01 - Rs. 233,333.33";
+    const bracket2Desc = "Above Rs. 233,333.34";
+
     if (detail.rate === 0) {
-      return "Rs. 0 - Rs. 150,000";  // Tax-free threshold
+      return thresholdDesc;
     }
     
     if (detail.rate === 6) {
-      return "Rs. 150,000.01 - Rs. 233,333.33";  // 6% bracket for foreign remittance
+      return bracket1Desc;
     }
     
     if (detail.rate === 15) {
-      return "Above Rs. 233,333.34";  // 15% bracket for foreign remittance
+      return bracket2Desc;
     }
     
-    // For custom ranges, calculate from the actual values
     const monthlyFrom = (detail.from / 12).toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
@@ -139,9 +146,16 @@ function TaxBreakdownTable({ oldTax, newTax, isForeignRemittance }) {
       {/* Only show comparison for regular income, not for foreign remittance */}
       {!isForeignRemittance && (
         <>
-          <Typography variant="h6" gutterBottom>
-            Tax Comparison: Previous vs. 2025 Official Rates
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, flexWrap: 'wrap', gap: 1 }}>
+            <Typography variant="h6">
+              {isProposed 
+                ? "Tax Comparison: Previous Rates vs. Proposed Budget 2027 Rates" 
+                : "Tax Comparison: Previous vs. 2025 Official Rates"}
+            </Typography>
+            {isProposed && (
+              <Chip label="Proposed Rates Active" color="success" size="small" sx={{ fontWeight: 600 }} />
+            )}
+          </Box>
           
           <TableContainer component={Paper} sx={{ mb: 3 }}>
             <Table>
@@ -149,7 +163,9 @@ function TaxBreakdownTable({ oldTax, newTax, isForeignRemittance }) {
                 <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                   <TableCell sx={{ fontWeight: 'bold' }}>Tax Category</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Previous Tax (Rs.)</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>2025 Official Tax (Rs.)</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    {isProposed ? "Proposed Budget 2027 Tax (Rs.)" : "2025 Official Tax (Rs.)"}
+                  </TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Difference</TableCell>
                 </TableRow>
               </TableHead>
@@ -193,11 +209,17 @@ function TaxBreakdownTable({ oldTax, newTax, isForeignRemittance }) {
         </>
       )}
 
-      <Typography variant="h6" gutterBottom>
-        {isForeignRemittance
-          ? "Foreign Remittance Tax Breakdown"
-          : "Monthly Tax Breakdown (2025 Official Rates)"}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h6">
+          {isForeignRemittance
+            ? (isProposed ? "Foreign Remittance Tax Breakdown (Proposed Budget 2027)" : "Foreign Remittance Tax Breakdown")
+            : (isProposed ? "Monthly Tax Breakdown (Budget 2027 Proposed Rates)" : "Monthly Tax Breakdown (2025 Official Rates)")}
+        </Typography>
+        {isProposed && (
+          <Chip label="Rs. 162,500 Threshold & 12% Bracket" color="primary" size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+        )}
+      </Box>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -246,8 +268,16 @@ function TaxBreakdownTable({ oldTax, newTax, isForeignRemittance }) {
       {isForeignRemittance && (
         <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, backgroundColor: '#e8f5e9' }}>
           <Typography variant="body2">
-            Foreign remittance income benefits from simplified tax rates: 0% up to Rs. 150,000/month, 
-            6% for income from Rs. 150,000.01 to Rs. 233,333.33/month, and 15% for income above Rs. 233,333.34/month.
+            Foreign remittance income benefits from simplified tax rates: 0% up to {isProposed ? "Rs. 162,500/month" : "Rs. 150,000/month"}, 
+            6% for income from {isProposed ? "Rs. 162,500.01" : "Rs. 150,000.01"} to Rs. 233,333.33/month, and 15% for income above Rs. 233,333.34/month.
+          </Typography>
+        </Box>
+      )}
+
+      {isProposed && !isForeignRemittance && (
+        <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, backgroundColor: '#e8f5e9', border: '1px solid #c8e6c9' }}>
+          <Typography variant="body2" sx={{ color: '#2e7d32', fontWeight: 500 }}>
+            💡 <strong>Budget 2027 Relief Highlights:</strong> The newly proposed structure increases the tax-free limit to Rs. 162,500/mo (Rs. 1.95M/year) and introduces a 12% bracket (Rs. 233,333 - Rs. 283,333/mo), offering monthly tax reductions from Rs. 750 up to Rs. 15,750.
           </Typography>
         </Box>
       )}

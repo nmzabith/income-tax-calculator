@@ -43,7 +43,7 @@ const Header = () => {
               zIndex: 1,
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 3, flexWrap: "wrap", justifyContent: "center" }}>
               <Box
                 sx={{
                   display: "flex",
@@ -77,7 +77,7 @@ const Header = () => {
                 <Typography
                   variant="subtitle1"
                   sx={{
-                    color: "rgba(255, 255, 255, 0.9)",
+                    color: "rgba(255, 255, 255, 0.95)",
                     textAlign: "center",
                     fontSize: { xs: "0.875rem", sm: "1rem" },
                     fontWeight: 500,
@@ -85,10 +85,11 @@ const Header = () => {
                     alignItems: "center",
                     gap: 1,
                     justifyContent: "center",
+                    flexWrap: "wrap",
                   }}
                 >
                   <Sparkles size={16} />
-                  2025/2026 Tax Year - Official Rates
+                  Official 2025/2026 Rates & Proposed Budget 2027 Relief
                 </Typography>
               </Box>
             </Box>
@@ -117,8 +118,19 @@ const Header = () => {
             }}
           >
             <Chip
+              icon={<Sparkles size={16} />}
+              label="NEW: Budget 2027 Relief"
+              variant="filled"
+              sx={{
+                background: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
+                color: "white",
+                fontWeight: 600,
+                px: 1,
+              }}
+            />
+            <Chip
               icon={<TrendingUp size={16} />}
-              label="Latest 2025 Tax Rates"
+              label="Official 2025/2026 Rates"
               variant="filled"
               sx={{
                 background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
@@ -129,7 +141,7 @@ const Header = () => {
             />
             <Chip
               icon={<Shield size={16} />}
-              label="Official IRD Compliant"
+              label="Inland Revenue Compliant"
               variant="outlined"
               sx={{
                 borderColor: "#4f46e5",
@@ -142,7 +154,7 @@ const Header = () => {
             />
             <Chip
               icon={<Calculator size={16} />}
-              label="Instant Calculations"
+              label="Instant Side-by-Side Comparison"
               variant="outlined"
               sx={{
                 borderColor: "#7c3aed",

@@ -6,13 +6,21 @@ import { Typography, Container, ThemeProvider } from "@mui/material";
 import { Alert, Checkbox, FormControlLabel } from "@mui/material";
 import React, { Component, lazy, Suspense } from 'react';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { calculateNewTax, calculateOldTax, calculateForeignRemittanceTax, calculateBonusTax } from './utils/taxCalculations';
+import { 
+  calculateNewTax, 
+  calculateOldTax, 
+  calculateForeignRemittanceTax, 
+  calculateBonusTax,
+  calculateProposedTax,
+  calculateProposedForeignRemittanceTax 
+} from './utils/taxCalculations';
 import { getUsdToLkrRate, convertUsdToLkr } from './services/currencyService';
 import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 import Helmet from 'react-helmet';
 import Header from './components/Header';
 import InputCard from './components/InputCard';
+import ProposedTaxBanner from './components/ProposedTaxBanner';
 import theme from './theme/theme';
 
 // Lazily load non-critical components
@@ -30,9 +38,11 @@ class App extends Component {
     totalMonthlyIncome: 0,
     income: { monthly: 0, annualy: 0 },
     tax: { total: 0, details: [] },
+    current2025Tax: { total: 0, details: [] },
     customTax: [],
     oldTax: { total: 0, details: [] },
     isForeignRemittance: false,
+    isProposedTax: false, // Default is false: keep existing official calculation intact
     currency: 'LKR',
     exchangeRate: null,
     isLoading: false,
@@ -132,6 +142,12 @@ class App extends Component {
     }
   };
 
+  handleProposedTaxToggle = (isProposedTax) => {
+    this.setState({ isProposedTax }, () => {
+      this.calculate();
+    });
+  };
+
   handleCurrencyChange = async (currency) => {
     this.setState({ currency, isLoading: true });
     
@@ -170,7 +186,7 @@ class App extends Component {
   };
 
   calculate = () => {
-    const { income, customTax, isForeignRemittance, currency, isBonusEnabled, bonusAmount } = this.state;
+    const { income, customTax, isForeignRemittance, currency, isBonusEnabled, bonusAmount, isProposedTax } = this.state;
     const { totalOtherIncome, totalTax } = this.calculateCustomTax(customTax);
     
     // Use the converted amount for calculations if currency is USD
@@ -180,13 +196,22 @@ class App extends Component {
     
     const oldTaxAmount = calculateOldTax(amount, 100000);
     
-    // Use the appropriate tax calculation method
-    const newTaxAmount = isForeignRemittance ?
+    // Existing official 2025 tax calculation (150k threshold)
+    const current2025TaxAmount = isForeignRemittance ?
       calculateForeignRemittanceTax(amount, 150000) :
       calculateNewTax(amount, 150000);
 
+    // Newly proposed Budget 2027 tax calculation (162.5k threshold & 12% bracket)
+    const proposedTaxAmount = isForeignRemittance ?
+      calculateProposedForeignRemittanceTax(amount, 162500) :
+      calculateProposedTax(amount, 162500);
+
+    // Active tax based on whether the user has ticked the proposed rates option
+    const activeTax = isProposedTax ? proposedTaxAmount : current2025TaxAmount;
+
     this.setState({
-      tax: newTaxAmount,
+      tax: activeTax,
+      current2025Tax: current2025TaxAmount,
       oldTax: oldTaxAmount,
       totalMonthlyIncome: amount,
       otherTax: totalTax,
@@ -241,7 +266,7 @@ class App extends Component {
   };
 
   calculateBonusTax = () => {
-    const { income, bonusAmount, isForeignRemittance, currency } = this.state;
+    const { income, bonusAmount, isForeignRemittance, currency, isProposedTax } = this.state;
     
     if (!bonusAmount || bonusAmount <= 0 || !income.monthly || income.monthly <= 0) {
       this.setState({ bonusTaxCalculation: null });
@@ -253,7 +278,7 @@ class App extends Component {
       (income.convertedMonthly || 0) : 
       Number(income.monthly);
 
-    const bonusTaxResult = calculateBonusTax(monthlySalary, bonusAmount, isForeignRemittance);
+    const bonusTaxResult = calculateBonusTax(monthlySalary, bonusAmount, isForeignRemittance, isProposedTax);
     this.setState({ bonusTaxCalculation: bonusTaxResult });
   };
 
@@ -264,9 +289,11 @@ class App extends Component {
       totalMonthlyIncome, 
       otherTax, 
       tax, 
+      current2025Tax,
       oldTax, 
       otherIncome,
       isForeignRemittance,
+      isProposedTax,
       currency,
       exchangeRate,
       isLoading,
@@ -278,8 +305,9 @@ class App extends Component {
     return (
       <ThemeProvider theme={theme}>
         <Helmet>
-          <title>Sri Lanka Income Tax Calculator 2024/2025 | PAYE Tax Online Tool</title>
-          <meta name="description" content="Calculate your income tax in Sri Lanka for 2024/2025 with our free PAYE tax calculator. Supports foreign remittance and latest tax amendments." />
+          <title>Sri Lanka Income Tax Calculator 2025/2026 & Proposed Budget 2027 Rates | PAYE Tax Tool</title>
+          <meta name="description" content="Calculate your income tax in Sri Lanka for 2025/2026 and check newly proposed Budget 2027 tax relief (Rs. 162,500 tax-free limit, 12% slab, and APIT calculator). Free online tax tool." />
+          <meta name="keywords" content="Sri Lanka income tax calculator, Budget 2027 tax update Sri Lanka, proposed tax rates Sri Lanka, 162500 tax free limit, 12 percent tax bracket, PAYE tax calculator Sri Lanka, APIT calculator Sri Lanka, foreign remittance tax Sri Lanka, new tax relief Sri Lanka" />
           {/* Add preconnect links for faster loading */}
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -294,6 +322,14 @@ class App extends Component {
           <Container maxWidth="lg" sx={{ pb: 6 }}>
             <Grid container spacing={3}>
               
+              {/* Proposed Tax Update Banner with Tick */}
+              <Grid item xs={12}>
+                <ProposedTaxBanner 
+                  isProposedTax={isProposedTax} 
+                  onProposedTaxToggle={this.handleProposedTaxToggle} 
+                />
+              </Grid>
+
               {/* Tax Type Toggle */}
               <Grid item xs={12}>
                 <Suspense fallback={<Paper sx={{ p: 2, textAlign: 'center' }}><CircularProgress size={24} /></Paper>}>
@@ -380,7 +416,7 @@ class App extends Component {
                     <Grid item xs={12} sx={{ mt: 2 }}>
                       <Paper sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
                         <Typography variant="h6" sx={{ mb: 2 }}>
-                          Bonus Tax Calculation (Cumulative Method)
+                          Bonus Tax Calculation (Cumulative Method{bonusTaxCalculation.isProposed ? " - Proposed Rates" : ""})
                         </Typography>
                         <Typography variant="body2" sx={{ mb: 1 }}>
                           Total Annual Income: Rs.{bonusTaxCalculation.totalAnnualIncome.toLocaleString()}
@@ -413,7 +449,7 @@ class App extends Component {
               )}
 
               {/* Tax Breakdown Table */}
-              {totalMonthlyIncome > 150000 && (
+              {totalMonthlyIncome > 100000 && (
                 <Grid item xs={12}>
                   <Suspense fallback={<Paper sx={{ p: 2, textAlign: 'center' }}><CircularProgress size={24} /></Paper>}>
                     <TaxBreakdownTable 
@@ -432,9 +468,11 @@ class App extends Component {
                     <TaxOutput 
                       tax={tax}
                       oldTax={oldTax}
+                      current2025Tax={current2025Tax}
                       otherTax={otherTax}
                       totalMonthlyIncome={totalMonthlyIncome}
                       otherIncome={otherIncome}
+                      isProposedTax={isProposedTax}
                     />
                   </Suspense>
                 </Grid>
@@ -499,4 +537,3 @@ class App extends Component {
 }
  
 export default App;
-
